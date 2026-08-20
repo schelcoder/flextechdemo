@@ -1,0 +1,405 @@
+<!doctype html>
+<title>Databricks OCPP EV-Charging Reference Architecture</title>
+<style>
+  body{margin:0;padding:20px 0;background:#fff;font-family:system-ui,Arial,sans-serif;}
+  .wrap{width:1400px;margin:0 auto;}
+  svg{display:block;}
+  .ann-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;}
+  .ann{border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.5;border:1px solid #ddd;}
+  .ann .icon{font-size:18px;display:block;margin-bottom:4px;}
+  .ann-warn{background:#fff8e1;border-color:#f9a825;}
+  .ann-ok{background:#e8f5e9;border-color:#388e3c;}
+  .ann-sync{background:#e3f2fd;border-color:#1565c0;}
+  .ann-time{background:#fce4ec;border-color:#c62828;}
+  .ann-batt{background:#f3e5f5;border-color:#6a1b9a;}
+  .ann-scan{background:#e0f2f1;border-color:#00695c;}
+  table.lat{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+  table.lat th{background:#ff3621;color:#fff;padding:7px 10px;text-align:left;}
+  table.lat td{padding:6px 10px;border-bottom:1px solid #e0e0e0;}
+  table.lat tr:nth-child(even) td{background:#fff5f5;}
+  table.lat tr.total td{font-weight:700;background:#fff0ee;}
+  .leg{display:flex;gap:28px;flex-wrap:wrap;font-size:12px;align-items:center;margin-top:10px;}
+  .leg-item{display:flex;align-items:center;gap:6px;}
+  h2.section{font-size:14px;font-weight:700;margin:18px 0 6px;color:#333;border-bottom:2px solid #ff3621;padding-bottom:4px;}
+</style>
+<div class="wrap">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1440" viewBox="0 0 1400 1440">
+<defs>
+  <filter id="sh" x="-8%" y="-8%" width="116%" height="116%">
+    <feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="#00000022"/>
+  </filter>
+  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#607d8b"/>
+  </marker>
+  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#1565c0"/>
+  </marker>
+  <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#e65100"/>
+  </marker>
+  <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#6a1b9a"/>
+  </marker>
+</defs>
+
+<!-- ═══════════════════ TITLE ═══════════════════ -->
+<rect x="0" y="0" width="1400" height="72" fill="#1a1a2e"/>
+<text x="700" y="30" text-anchor="middle" font-family="system-ui,Arial" font-size="19" font-weight="700" fill="#FF3621">Databricks Reference Architecture: Bidirectional OCPP EV-Charging Demand Flexibility</text>
+<text x="700" y="53" text-anchor="middle" font-family="system-ui,Arial" font-size="12" fill="#90a0b0">Closed-loop demo · Zerobus Ingest · Spark Streaming · Lakebase · Dual write-back</text>
+
+<!-- ═══════════════════ LANE BACKGROUNDS ═══════════════════ -->
+<!-- Lane 1: Field  y=72..320 h=248 -->
+<rect x="0" y="72" width="1400" height="248" fill="#e3f2fd"/>
+<rect x="0" y="72" width="100" height="248" fill="#bbdefb"/>
+<text transform="translate(50,196) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#0d47a1">LANE 1 — Field Layer</text>
+
+<!-- Lane 2: Ingestion  y=320..448 h=128 -->
+<rect x="0" y="320" width="1400" height="128" fill="#e8f5e9"/>
+<rect x="0" y="320" width="100" height="128" fill="#c8e6c9"/>
+<text transform="translate(50,384) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#1b5e20">LANE 2 — Ingestion</text>
+
+<!-- Lane 3: Lakehouse  y=448..688 h=240 -->
+<rect x="0" y="448" width="1400" height="240" fill="#ede7f6"/>
+<rect x="0" y="448" width="100" height="240" fill="#d1c4e9"/>
+<text transform="translate(50,568) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#4a148c">LANE 3 — Lakehouse</text>
+
+<!-- Lane 4: Processing  y=688..888 h=200 -->
+<rect x="0" y="688" width="1400" height="200" fill="#fff3e0"/>
+<rect x="0" y="688" width="100" height="200" fill="#ffe0b2"/>
+<text transform="translate(50,788) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#bf360c">LANE 4 — Processing</text>
+
+<!-- Lane 5: Operational  y=888..1248 h=360 -->
+<rect x="0" y="888" width="1400" height="360" fill="#fce4ec"/>
+<rect x="0" y="888" width="100" height="360" fill="#f8bbd0"/>
+<text transform="translate(50,1068) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#880e4f">LANE 5 — Operational</text>
+
+<!-- Lane 6: Output  y=1248..1430 h=182 -->
+<rect x="0" y="1248" width="1400" height="182" fill="#fffde7"/>
+<rect x="0" y="1248" width="100" height="182" fill="#fff9c4"/>
+<text transform="translate(50,1339) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="700" fill="#f57f17">LANE 6 — Output</text>
+
+<!-- ═══════════════════ LANE 1 BOXES ═══════════════════ -->
+<!-- Simulated Chargers: x=110 y=88 w=248 h=200 -->
+<rect x="110" y="88" width="248" height="200" rx="8" fill="white" stroke="#90caf9" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="110" y="88" width="248" height="28" rx="8" fill="#1565c0"/>
+<rect x="110" y="104" width="248" height="12" fill="#1565c0"/>
+<text x="234" y="107" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="white">Simulated Chargers</text>
+<text x="234" y="133" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#37474f">N async ChargePoints</text>
+<text x="234" y="150" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#37474f">(mobilityhouse/ocpp)</text>
+<text x="234" y="167" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#78909c">co-located with CSMS</text>
+<line x1="130" y1="180" x2="342" y2="180" stroke="#e0e0e0" stroke-width="1"/>
+<text x="234" y="197" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">BootNotification</text>
+<text x="234" y="213" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">MeterValues</text>
+<text x="234" y="229" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">StatusNotification</text>
+<text x="234" y="248" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">RemoteStopTransaction</text>
+<text x="234" y="265" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">ChangeAvailability</text>
+
+<!-- CSMS Process: x=488 y=88 w=268 h=200 -->
+<rect x="488" y="88" width="268" height="200" rx="8" fill="white" stroke="#90caf9" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="488" y="88" width="268" height="28" rx="8" fill="#1565c0"/>
+<rect x="488" y="104" width="268" height="12" fill="#1565c0"/>
+<text x="622" y="107" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="white">CSMS Process</text>
+<text x="622" y="133" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#37474f">Python ocpp library</text>
+<line x1="508" y1="145" x2="740" y2="145" stroke="#e0e0e0" stroke-width="1"/>
+<text x="622" y="162" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">terminates OCPP-J WebSockets</text>
+<text x="622" y="178" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">Zerobus SDK (gRPC ingest)</text>
+<text x="622" y="194" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#1565c0" font-weight="600">LISTEN curtail (pg_notify)</text>
+<text x="622" y="210" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">/control REST endpoint</text>
+<text x="622" y="226" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">SetChargingProfile handler</text>
+<text x="622" y="243" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">RemoteStopTransaction handler</text>
+<text x="622" y="259" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">poll fallback thread (~2s)</text>
+
+<!-- Lane 1 bidirectional arrows -->
+<!-- Chargers → CSMS: "OCPP-J loopback ws" -->
+<line x1="358" y1="168" x2="486" y2="168" stroke="#607d8b" stroke-width="2.2" marker-end="url(#ag)"/>
+<text x="422" y="162" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#455a64">OCPP-J loopback ws</text>
+
+<!-- CSMS → Chargers: "SetChargingProfile / RemoteStopTransaction" -->
+<line x1="488" y1="210" x2="360" y2="210" stroke="#607d8b" stroke-width="2.2" marker-end="url(#ag)"/>
+<text x="422" y="226" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#455a64">SetChargingProfile /</text>
+<text x="422" y="238" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#455a64">RemoteStopTransaction</text>
+
+<!-- ═══════════════════ LANE 2 BOXES ═══════════════════ -->
+<!-- Zerobus Ingest: x=488 y=335 w=270 h=96 -->
+<rect x="488" y="335" width="270" height="96" rx="8" fill="white" stroke="#a5d6a7" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="488" y="335" width="270" height="26" rx="8" fill="#2e7d32"/>
+<rect x="488" y="349" width="270" height="12" fill="#2e7d32"/>
+<text x="623" y="353" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="white">Zerobus Ingest</text>
+<text x="623" y="376" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">GA Feb 23 2026 · gRPC · at-least-once</text>
+<text x="623" y="394" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">P50 ≤5s time-to-table</text>
+<text x="623" y="412" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">proto schema auto-generated from UC table</text>
+
+<!-- CSMS → Zerobus arrow -->
+<path d="M 622,288 V 335" stroke="#607d8b" stroke-width="2.2" fill="none" marker-end="url(#ag)"/>
+<text x="637" y="316" font-family="system-ui,Arial" font-size="9.5" fill="#455a64">gRPC ingest_record</text>
+
+<!-- ═══════════════════ LANE 3 BOXES ═══════════════════ -->
+<!-- ocpp_meter_values: x=110 y=468 w=210 h=88 -->
+<rect x="110" y="468" width="210" height="88" rx="8" fill="white" stroke="#ce93d8" stroke-width="1.5" filter="url(#sh)"/>
+<text x="215" y="488" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#6a1b9a" font-weight="700">UC Delta</text>
+<text x="215" y="505" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="700" fill="#4a148c">ocpp_meter_values</text>
+<line x1="126" y1="512" x2="304" y2="512" stroke="#e0e0e0" stroke-width="1"/>
+<text x="215" y="527" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">power_w, energy_wh, ts</text>
+<text x="215" y="543" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">charger_id, connector_id</text>
+
+<!-- grid_events: x=378 y=468 w=210 h=88 -->
+<rect x="378" y="468" width="210" height="88" rx="8" fill="white" stroke="#ce93d8" stroke-width="1.5" filter="url(#sh)"/>
+<text x="483" y="488" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#6a1b9a" font-weight="700">UC Delta</text>
+<text x="483" y="505" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="700" fill="#4a148c">grid_events</text>
+<line x1="394" y1="512" x2="572" y2="512" stroke="#e0e0e0" stroke-width="1"/>
+<text x="483" y="527" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">constraint/price events</text>
+<text x="483" y="543" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">event_type, kw_limit, expiry</text>
+
+<!-- subscribers: x=648 y=468 w=210 h=88 -->
+<rect x="648" y="468" width="210" height="88" rx="8" fill="white" stroke="#ce93d8" stroke-width="1.5" filter="url(#sh)"/>
+<text x="753" y="488" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#6a1b9a" font-weight="700">UC Delta</text>
+<text x="753" y="505" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="700" fill="#4a148c">subscribers</text>
+<line x1="664" y1="512" x2="842" y2="512" stroke="#e0e0e0" stroke-width="1"/>
+<text x="753" y="527" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">opted-in flex flag, priority</text>
+<text x="753" y="543" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">charger_id, site_id</text>
+
+<!-- OpenADR VTN / Price Feed: x=910 y=460 w=210 h=88 -->
+<rect x="910" y="460" width="210" height="88" rx="8" fill="white" stroke="#ce93d8" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1015" y="482" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="#4a148c">OpenADR VTN</text>
+<text x="1015" y="498" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="#4a148c">/ Price Feed</text>
+<line x1="926" y1="506" x2="1104" y2="506" stroke="#e0e0e0" stroke-width="1"/>
+<text x="1015" y="522" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">external demand signal</text>
+<text x="1015" y="538" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">price spike / constraint</text>
+
+<!-- OpenADR → grid_events arrow -->
+<line x1="910" y1="512" x2="592" y2="512" stroke="#607d8b" stroke-width="2" marker-end="url(#ag)"/>
+<text x="748" y="507" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#455a64">price spike / constraint</text>
+
+<!-- command_status (audit): x=1172 y=468 w=205 h=88 -->
+<rect x="1172" y="468" width="205" height="88" rx="8" fill="white" stroke="#7c4dff" stroke-width="2" stroke-dasharray="5,3" filter="url(#sh)"/>
+<text x="1274" y="488" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#6a1b9a" font-weight="700">UC Delta</text>
+<text x="1274" y="505" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="700" fill="#4a148c">command_status</text>
+<line x1="1188" y1="512" x2="1361" y2="512" stroke="#e0e0e0" stroke-width="1"/>
+<text x="1274" y="527" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">command_id, charger, status</text>
+<rect x="1216" y="535" width="118" height="16" rx="4" fill="#ede7f6"/>
+<text x="1275" y="547" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#6a1b9a" font-weight="700">Lakehouse Sync (Beta)</text>
+
+<!-- Zerobus → ocpp_meter_values arrow -->
+<path d="M 575,431 C 575,460 215,450 215,468" stroke="#607d8b" stroke-width="2.2" fill="none" marker-end="url(#ag)"/>
+<text x="386" y="454" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#455a64">P50 ~5s</text>
+
+<!-- ═══════════════════ LANE 4 BOXES ═══════════════════ -->
+<!-- Spark Structured Streaming: x=110 y=710 w=325 h=158 -->
+<rect x="110" y="710" width="325" height="158" rx="8" fill="white" stroke="#ffcc80" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="110" y="710" width="325" height="26" rx="8" fill="#e65100"/>
+<rect x="110" y="724" width="325" height="12" fill="#e65100"/>
+<text x="272" y="728" text-anchor="middle" font-family="system-ui,Arial" font-size="11.5" font-weight="700" fill="white">Spark Structured Streaming / RTM</text>
+<text x="272" y="752" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">rolling site-load aggregation</text>
+<text x="272" y="768" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">join subscribers (static)</text>
+<text x="272" y="784" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">detect constraint event</text>
+<line x1="130" y1="796" x2="419" y2="796" stroke="#e0e0e0" stroke-width="1"/>
+<text x="272" y="812" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">stream: ocpp_meter_values</text>
+<text x="272" y="828" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">stream: grid_events</text>
+<text x="272" y="844" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">static join: subscribers</text>
+
+<!-- Decision Engine: x=555 y=710 w=258 h=158 -->
+<rect x="555" y="710" width="258" height="158" rx="8" fill="white" stroke="#ffcc80" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="555" y="710" width="258" height="26" rx="8" fill="#e65100"/>
+<rect x="555" y="724" width="258" height="12" fill="#e65100"/>
+<text x="684" y="728" text-anchor="middle" font-family="system-ui,Arial" font-size="11.5" font-weight="700" fill="white">Decision Engine</text>
+<text x="684" y="752" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">selects chargers to curtail</text>
+<text x="684" y="768" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">to hit kW target</text>
+<line x1="575" y1="780" x2="797" y2="780" stroke="#e0e0e0" stroke-width="1"/>
+<text x="684" y="797" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">emits command_id (UUIDv5)</text>
+<text x="684" y="813" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">foreachBatch writer</text>
+<text x="684" y="829" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">dual write-back dispatch</text>
+
+<!-- Arrows into Spark from Lane 3 tables -->
+<path d="M 215,556 V 710" stroke="#607d8b" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+<text x="228" y="636" font-family="system-ui,Arial" font-size="9" fill="#455a64">stream</text>
+<text x="228" y="648" font-family="system-ui,Arial" font-size="9" fill="#455a64">read</text>
+
+<path d="M 483,556 C 483,640 340,680 300,710" stroke="#607d8b" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+<text x="415" y="630" font-family="system-ui,Arial" font-size="9" fill="#455a64">stream read</text>
+
+<path d="M 753,556 C 753,640 380,680 340,710" stroke="#607d8b" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+<text x="590" y="630" font-family="system-ui,Arial" font-size="9" fill="#455a64">static join</text>
+
+<!-- Spark → Decision Engine -->
+<line x1="435" y1="789" x2="555" y2="789" stroke="#607d8b" stroke-width="2.5" marker-end="url(#ag)"/>
+<text x="495" y="783" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#455a64">event</text>
+
+<!-- ═══════════════════ LANE 5 BOXES ═══════════════════ -->
+
+<!-- PRIMARY PATH band label -->
+<rect x="108" y="892" width="138" height="20" rx="4" fill="#1565c0"/>
+<text x="177" y="906" text-anchor="middle" font-family="system-ui,Arial" font-size="10" font-weight="700" fill="white">● PRIMARY PATH (Lakebase)</text>
+
+<!-- SECONDARY PATH band label -->
+<rect x="620" y="892" width="160" height="20" rx="4" fill="#e65100"/>
+<text x="700" y="906" text-anchor="middle" font-family="system-ui,Arial" font-size="10" font-weight="700" fill="white">● SECONDARY PATH (HTTP)</text>
+
+<!-- Lakebase (Postgres/Neon): x=108 y=916 w=290 h=278 -->
+<rect x="108" y="916" width="290" height="278" rx="8" fill="white" stroke="#1565c0" stroke-width="2" filter="url(#sh)"/>
+<rect x="108" y="916" width="290" height="28" rx="8" fill="#1565c0"/>
+<rect x="108" y="932" width="290" height="12" fill="#1565c0"/>
+<text x="253" y="934" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="white">Lakebase (Postgres/Neon)</text>
+<text x="253" y="960" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">curtailment_command table</text>
+<text x="253" y="976" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">AFTER INSERT trigger</text>
+<text x="253" y="992" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#1565c0" font-weight="600">pg_notify('curtail')</text>
+<text x="253" y="1008" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">command_status table</text>
+<line x1="128" y1="1022" x2="382" y2="1022" stroke="#e0e0e0" stroke-width="1"/>
+<text x="253" y="1040" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">applied_commands PK (dedup)</text>
+<text x="253" y="1056" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">INSERT WHERE NOT EXISTS</text>
+<text x="253" y="1072" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">UUIDv5 command_id</text>
+<line x1="128" y1="1086" x2="382" y2="1086" stroke="#1565c0" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="166" y="1098" width="176" height="20" rx="4" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+<text x="254" y="1112" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#1565c0" font-weight="700">→ Lakehouse Sync (Beta)</text>
+<text x="253" y="1140" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">syncs command_status →</text>
+<text x="253" y="1156" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">UC Delta command_status</text>
+<text x="253" y="1180" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#37474f">ms-scale latency</text>
+
+<!-- UC HTTP Connection: x=620 y=916 w=218 h=100 -->
+<rect x="620" y="916" width="218" height="100" rx="8" fill="white" stroke="#ffab40" stroke-width="2" filter="url(#sh)"/>
+<rect x="620" y="916" width="218" height="26" rx="8" fill="#e65100"/>
+<rect x="620" y="930" width="218" height="12" fill="#e65100"/>
+<text x="729" y="934" text-anchor="middle" font-family="system-ui,Arial" font-size="11.5" font-weight="700" fill="white">UC HTTP Connection</text>
+<text x="729" y="959" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">authenticated outbound</text>
+<text x="729" y="975" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">via Databricks proxy</text>
+<text x="729" y="1006" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">idempotency-key = command_id</text>
+
+<!-- CSMS /control REST: x=892 y=916 w=220 h=100 -->
+<rect x="892" y="916" width="220" height="100" rx="8" fill="white" stroke="#ffab40" stroke-width="2" filter="url(#sh)"/>
+<rect x="892" y="916" width="220" height="26" rx="8" fill="#e65100"/>
+<rect x="892" y="930" width="220" height="12" fill="#e65100"/>
+<text x="1002" y="934" text-anchor="middle" font-family="system-ui,Arial" font-size="11.5" font-weight="700" fill="white">CSMS /control REST</text>
+<text x="1002" y="959" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">webhook target</text>
+<text x="1002" y="975" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">on CSMS Process (Lane 1)</text>
+<text x="1002" y="1006" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">dedup via applied_commands PK</text>
+
+<!-- Decision Engine → Lakebase (PRIMARY BLUE) -->
+<path d="M 684,868 C 684,900 253,890 253,916" stroke="#1565c0" stroke-width="2.5" fill="none" marker-end="url(#ab)"/>
+<text x="440" y="896" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#1565c0" font-weight="600">foreachBatch ForeachWriter INSERT (ms-scale)</text>
+
+<!-- Decision Engine → UC HTTP (SECONDARY AMBER) -->
+<path d="M 684,868 C 684,900 729,895 729,916" stroke="#e65100" stroke-width="2" fill="none" marker-end="url(#ao)"/>
+
+<!-- UC HTTP → CSMS control (AMBER) -->
+<line x1="838" y1="966" x2="892" y2="966" stroke="#e65100" stroke-width="2.5" marker-end="url(#ao)"/>
+<text x="865" y="960" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#e65100">POST</text>
+
+<!-- Arrow label for DE→UC HTTP path -->
+<text x="760" y="886" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#e65100" font-weight="600">http_request / foreachBatch POST</text>
+
+<!-- LAKEBASE → CSMS long primary path arrows -->
+<!-- Primary: pg_notify  M 108,972 L 62,972 L 62,186 L 488,186 -->
+<path d="M 108,972 L 26,972 L 26,186 L 488,186" stroke="#1565c0" stroke-width="2.5" fill="none" marker-end="url(#ab)"/>
+<!-- Label along left side -->
+<text transform="translate(20,625) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#1565c0" font-weight="700">pg_notify(command_id)</text>
+
+<!-- Backstop dashed poll: M 108,1020 L 50,1020 L 50,218 L 488,218 -->
+<path d="M 108,1020 L 10,1020 L 10,218 L 488,218" stroke="#1565c0" stroke-width="2.5" fill="none" stroke-dasharray="6,4" marker-end="url(#ab)"/>
+<text transform="translate(4,640) rotate(-90)" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#1565c0">poll WHERE status=PENDING ~2s (backstop)</text>
+
+<!-- Lakebase → UC Delta command_status (Lakehouse Sync) -->
+<path d="M 398,1105 L 1390,1105 L 1390,545 L 1377,545" stroke="#6a1b9a" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#ap)"/>
+<text x="900" y="1098" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#6a1b9a" font-weight="600">Lakehouse Sync (Beta)</text>
+
+<!-- ═══════════════════ LANE 6 BOX ═══════════════════ -->
+<!-- AI/BI Dashboard: x=418 y=1268 w=308 h=138 -->
+<rect x="418" y="1268" width="308" height="138" rx="8" fill="white" stroke="#f9a825" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="418" y="1268" width="308" height="28" rx="8" fill="#f57f17"/>
+<rect x="418" y="1284" width="308" height="12" fill="#f57f17"/>
+<text x="572" y="1286" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="700" fill="white">AI/BI Dashboard</text>
+<text x="572" y="1312" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">live fleet-load · event banner</text>
+<text x="572" y="1328" text-anchor="middle" font-family="system-ui,Arial" font-size="10.5" fill="#37474f">per-charger state · load drop visible</text>
+<line x1="438" y1="1340" x2="710" y2="1340" stroke="#e0e0e0" stroke-width="1"/>
+<text x="572" y="1357" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">Databricks SQL warehouse · auto-refresh</text>
+<text x="572" y="1373" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#546e7a">reads UC Delta tables directly</text>
+
+<!-- ocpp_meter_values → AI/BI (read) -->
+<path d="M 108,530 L 36,530 L 36,1337 L 418,1337" stroke="#607d8b" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#ag)"/>
+<text x="30" y="940" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#607d8b" transform="translate(30,940) rotate(-90)">read</text>
+
+<!-- command_status → AI/BI (read) -->
+<path d="M 1390,545 L 1390,1337 L 726,1337" stroke="#607d8b" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#ag)"/>
+<text x="1106" y="1332" text-anchor="middle" font-family="system-ui,Arial" font-size="9.5" fill="#607d8b">read</text>
+
+</svg>
+
+<!-- ═══════════════════ ANNOTATIONS ═══════════════════ -->
+<h2 class="section">Design Notes &amp; Constraints</h2>
+<div class="ann-grid">
+  <div class="ann ann-warn">
+    <span class="icon">⚠️</span>
+    <strong>Databricks Apps cannot be public OCPP endpoint</strong><br>
+    OAuth/SSO mandatory, no anonymous access. CSMS must run co-located or behind separate ingress — not as a Databricks App directly.
+  </div>
+  <div class="ann ann-ok">
+    <span class="icon">✅</span>
+    <strong>Co-located CSMS + chargers</strong><br>
+    Loopback WebSocket (ws://localhost) — no external ingress needed. Simulated chargers run as async Python coroutines in the same process/pod.
+  </div>
+  <div class="ann ann-sync">
+    <span class="icon">🔄</span>
+    <strong>command_id UUIDv5 dedup</strong><br>
+    applied_commands PK ensures first path wins — exactly-once effect even if Lakebase NOTIFY and HTTP webhook both deliver. INSERT WHERE NOT EXISTS is idempotent.
+  </div>
+  <div class="ann ann-time">
+    <span class="icon">⏱️</span>
+    <strong>E2E latency P50 ~6–12s</strong><br>
+    Dominated by Zerobus ~5s time-to-table. Adequate for DFS dispatch windows (tens of minutes). Tail (P95 ~30–40s) fine for flex response. RTM mode reduces streaming lag to ms–300ms.
+  </div>
+  <div class="ann ann-batt">
+    <span class="icon">🔋</span>
+    <strong>SetChargingProfile dead-man switch</strong><br>
+    validTo = event expiry timestamp. Charger self-heals to full power if CSMS connection drops or no update received — prevents permanent curtailment from a crash.
+  </div>
+  <div class="ann ann-scan">
+    <span class="icon">🔍</span>
+    <strong>Verification gap: Accepted ≠ power reduced</strong><br>
+    OCPP Accepted only confirms message receipt. True verification requires streaming MeterValues join against commanded limit. Dashboard shows actual vs. target kW load curve.
+  </div>
+</div>
+
+<!-- ═══════════════════ LATENCY TABLE ═══════════════════ -->
+<h2 class="section">End-to-End Latency Budget</h2>
+<table class="lat">
+  <thead><tr><th>Hop</th><th>Estimate</th></tr></thead>
+  <tbody>
+    <tr><td>Charger → CSMS (loopback) + Zerobus ack</td><td>~200ms P50</td></tr>
+    <tr><td>Zerobus time-to-table (dominant)</td><td><strong>P50 ~5s / P95 ~30s</strong></td></tr>
+    <tr><td>Spark Structured Streaming read + decision (trigger)</td><td>~1–5s batch; RTM ~ms–300ms</td></tr>
+    <tr><td>Command out — webhook (UC HTTP / foreachBatch POST)</td><td>sub-second</td></tr>
+    <tr><td>Command out — Lakebase INSERT + pg_notify</td><td>~10–100ms</td></tr>
+    <tr><td>CSMS LISTEN receives NOTIFY → dispatches OCPP</td><td>~1–10ms</td></tr>
+    <tr><td>CSMS → charger OCPP round-trip (loopback)</td><td>~1–5ms</td></tr>
+    <tr class="total"><td>End-to-end typical</td><td>~6–12s P50 · ~30–40s tail (P95)</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════ LEGEND ═══════════════════ -->
+<h2 class="section">Legend</h2>
+<div class="leg">
+  <div class="leg-item">
+    <svg width="44" height="12"><line x1="0" y1="6" x2="38" y2="6" stroke="#1565c0" stroke-width="2.5" marker-end="url(#ab)"/></svg>
+    <span><strong style="color:#1565c0">PRIMARY PATH</strong> — Lakebase command queue (pg_notify)</span>
+  </div>
+  <div class="leg-item">
+    <svg width="44" height="12"><line x1="0" y1="6" x2="38" y2="6" stroke="#e65100" stroke-width="2" marker-end="url(#ao)"/></svg>
+    <span><strong style="color:#e65100">SECONDARY PATH</strong> — HTTP webhook (UC HTTP Connection)</span>
+  </div>
+  <div class="leg-item">
+    <svg width="44" height="12"><line x1="0" y1="6" x2="38" y2="6" stroke="#607d8b" stroke-width="1.5" marker-end="url(#ag)"/></svg>
+    <span>Data / telemetry flow</span>
+  </div>
+  <div class="leg-item">
+    <svg width="44" height="12"><line x1="0" y1="6" x2="38" y2="6" stroke="#1565c0" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#ab)"/></svg>
+    <span>Poll / backstop (dashed)</span>
+  </div>
+  <div class="leg-item">
+    <svg width="44" height="12"><line x1="0" y1="6" x2="38" y2="6" stroke="#6a1b9a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ap)"/></svg>
+    <span>Lakehouse Sync (Beta)</span>
+  </div>
+  <div class="leg-item">
+    <svg width="24" height="12"><rect x="0" y="1" width="24" height="10" rx="2" fill="white" stroke="#7c4dff" stroke-width="1.5" stroke-dasharray="4,2"/></svg>
+    <span>(Beta) — not GA</span>
+  </div>
+</div>
+<p style="font-size:11px;color:#78909c;margin-top:16px;">Generated 2026-08-14 · Databricks Field Engineering · OCPP EV-Charging Demand Flexibility Reference Architecture</p>
+</div>

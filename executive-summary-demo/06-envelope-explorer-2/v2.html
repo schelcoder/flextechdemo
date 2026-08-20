@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Capacity, Margin, Trust · Energy Company VPP Demo v2</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="scroller">
+  <section class="intro" data-act="intro" data-role="intro">
+    <div class="tag">Demo Plan · V2</div>
+    <h1>Capacity. Margin.<br><span class="grad">Trust.</span></h1>
+    <p class="sub">Flexibility as Energy Company's next asset class. Six loops, one Nordic power plant —
+      from a single EV charging tonight to a governed foundation that carries heat, batteries and
+      industrial flex. Step through the whole demo, one loop at a time.</p>
+    <div class="meta">
+      <span><b>Demo date</b> · 2026-08-11</span>
+      <span><b>Solution lead</b> · Alex Morgan</span>
+    </div>
+  </section>
+</div>
+
+<div class="key-cue">Use <b>→</b> / <b>Space</b> or the buttons · <b>←</b> to go back</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:null, beats:0, prev:null, next:"loop-1.html", num:"—", label:"Intro", nextLabel:"Begin the demo \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

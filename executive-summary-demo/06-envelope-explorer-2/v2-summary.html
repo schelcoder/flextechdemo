@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scorecard · Energy Company VPP Demo v2</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="scroller">
+  <section class="outro" data-act="outro" data-role="outro">
+    <div class="hero-card">
+      <div class="eyebrow">The Capacity–Margin–Trust Scorecard</div>
+      <h2>Six loops. One flexibility program.</h2>
+      <p class="lede">A single tradable abstraction — bounded power, traceable settlement, and a
+        customer promise that holds — turns parked EVs, boilers and batteries into the Nordics'
+        fastest balancing asset.</p>
+      <div class="hero-grid">
+        <div class="hero-cell">
+          <span class="hlab">Capacity</span>
+          <span class="hv g">8.4 MW</span><span class="hk">Live today · 4,218 EVs</span>
+          <span class="hs">Hypothesis at scale: ≈200 MW + boiler</span>
+        </div>
+        <div class="hero-cell">
+          <span class="hlab">Margin</span>
+          <span class="hv w">€312K</span><span class="hk">Net savings YTD · €42/customer</span>
+          <span class="hs">Hypothesis: €18M–€57M/yr · 185% IRR</span>
+        </div>
+        <div class="hero-cell">
+          <span class="hlab">Trust</span>
+          <span class="hv l">0.4%</span><span class="hk">Opt-out · €312K returned</span>
+          <span class="hs">100% vulnerable-customer compliance</span>
+        </div>
+      </div>
+      <ul class="ask-list">
+        <li><span class="ai">1</span>Confirm the capacity–margin–trust scorecard as the board reporting frame</li>
+        <li><span class="ai">2</span>Name the first Energy Company data sources to wire for a production Phase 1</li>
+        <li><span class="ai">3</span>Name the IT and business co-sponsors for the EVP conversation — this quarter</li>
+      </ul>
+      <button class="restart" id="restartBtn">↑ Replay the demo</button>
+    </div>
+  </section>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:null, beats:0, prev:"loop-6.html", next:null, num:"\u2713", label:"Summary", endLabel:"\u2191 Replay" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

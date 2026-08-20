@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "customer": "Energy Company",
+    "business_function": "Demand Response & Flexibility (Virtual Power Plant)",
+    "industry": "Electricity Utility — Nordics",
+    "opportunity": "Flexibility as Energy Company's next asset class",
+    "demo_date": "2026-08-11",
+    "presenters": { "sa": "Alex Morgan", "ae": "Jamie Chen" }
+  },
+  "opportunity": {
+    "background": "Energy Company aggregates EV charging — next, heat and industrial assets — into a virtual power plant, selling flexibility into Nordic markets while guaranteeing every car is charged by departure. Thesis: capacity is the supply, margin is the monetization, trust is the license.",
+    "current_situation": "Nordic capacity and volatility are both at record levels; transmission is delayed and battery capex keeps rising. Energy Company has 200,000+ EV customers in reach and a 4,218-vehicle pilot delivering 8.4 MW and €312K net savings YTD. Next 12–24 months decide Nordic flex market share.",
+    "business_challenges": [
+      "Monetizing flexibility without tariff increases or rate cases",
+      "Making retail-scale assets bankable for the desk and TSOs",
+      "Protecting social license as dispatch events grow",
+      "Avoiding disconnected point solutions as the program expands",
+      "Proving delivered value against credible counterfactual baselines"
+    ]
+  },
+  "room": [
+    {
+      "name": "Sofia Lindqvist",
+      "role": "VP, Digital Customer Offering",
+      "altitude": "Executive",
+      "stakeholder_type": "Economic Buyer",
+      "interests": "A digital service customers love; enrollment growth; savings as a retention story",
+      "concerns": "A bad dispatch headline; opt-out fatigue; science project vs. sellable product"
+    },
+    {
+      "name": "Erik Virtanen",
+      "role": "VP, Data & Integrations",
+      "altitude": "Executive",
+      "stakeholder_type": "Sponsor",
+      "interests": "One governed foundation across use cases; lineage; pattern-not-project expansion",
+      "concerns": "Another vertical app fragmenting the ecosystem; integration burden on source systems"
+    },
+    {
+      "name": "Mikael Korhonen",
+      "role": "VP, Business IT",
+      "altitude": "Executive",
+      "stakeholder_type": "Influencer",
+      "interests": "Clear operating model; production readiness",
+      "concerns": "Shadow architecture; unclear business/IT ownership; support burden"
+    },
+    {
+      "name": "Juhani Mäkinen",
+      "role": "Director, IT Architecture & AI",
+      "altitude": "Executive",
+      "stakeholder_type": "Blocker",
+      "interests": "Standards compliance; auditability; governed forecasting/optimization models",
+      "concerns": "Platform lock-in; ungoverned AI in a regulated process"
+    },
+    {
+      "name": "Liisa Saarinen",
+      "role": "Director, Finance Development",
+      "altitude": "Executive",
+      "stakeholder_type": "Influencer",
+      "interests": "Euro-by-euro traceability; a defensible business case; clean baselines",
+      "concerns": "Hypotheses presented as actuals; an unreconcilable margin line"
+    },
+    {
+      "name": "Henrik Sundqvist",
+      "role": "Director, Business Development (Hydro)",
+      "altitude": "Executive",
+      "stakeholder_type": "Influencer",
+      "interests": "Flexibility complementing hydro balancing; portfolio-level optimization",
+      "concerns": "Retail megawatt reliability; cannibalizing hydro balancing revenue"
+    },
+    {
+      "name": "Pekka Leinonen",
+      "role": "Director, IT (Heating and Cooling)",
+      "altitude": "Executive",
+      "stakeholder_type": "Influencer",
+      "interests": "The district-heating boiler story; reusing the foundation for heat flex",
+      "concerns": "Integration with heating control; operational risk touching production heat assets"
+    }
+  ],
+  "audience_readout": {
+    "mix": "Seven executives, no operational audience. Four of seven skew IT/data; no confirmed champion or EVP budget owner.",
+    "pitch_to": "Open and close at executive altitude. Four of seven are IT/data leaders, so the foundation story runs second, right after the opening frame. If time compresses, keep Loops 1, 2, and 3.",
+    "emphasize": ["Avoided capex, not new spend", "New EBITDA line, no tariff increase", "0.4% opt-out, trust intact", "Pattern reuses for heat, hydro flex"],
+    "avoid": ["Platform/product jargon", "Architecture Q&A in the main flow", "Presenting scaled figures as actuals"],
+    "blocker_sequencing": "Mäkinen is the likely blocker. Address with Loop 5's audit trail and Loop 6's lineage-first foundation, then invite him as Phase-1 co-sponsor; park deep architecture for a follow-up."
+  },
+  "value_hypothesis": {
+    "summary": "Today's pilot figures (4,218 EVs, 8.4 MW, €312K YTD, €42/customer, 94–96% delivery) are demonstrated; 100,000-EV scale is a hypothesis.",
+    "assumptions": [
+      "~2 kW average orchestrable flexibility per enrolled EV",
+      "Enrollment scales toward 100,000 EVs with opt-out at or below 1%",
+      "Blended value between €89K–€285K/MW/yr",
+      "One district-heating boiler adds 20–30 MW near-zero-CAC flexibility"
+    ],
+    "value_math": "100,000 EVs × ~2 kW ≈ 200 MW, plus 20–30 MW from one boiler. At €89K–285K/MW/yr, roughly €18M–€57M/yr gross value.",
+    "risk_reduction": "The closed loop runs today, so Phase-1 risk shrinks to data wiring and market onboarding.",
+    "executive_ask": "Confirm the capacity–margin–trust scorecard, name first data sources to wire, and name IT/business co-sponsors this quarter."
+  },
+  "value_pyramid": [
+    { "capability": "Flexibility-envelope story", "team_outcome": "Executives grasp the portfolio as one dispatchable asset", "strategic_priority": "Flexibility as an everyday asset class deferring capex" },
+    { "capability": "Portfolio-level probabilistic forecast", "team_outcome": "Desk sells only what the fleet can deliver", "strategic_priority": "Bankable path from 4,218 to 200,000 customers" },
+    { "capability": "Dispatch-to-settlement traceability", "team_outcome": "Finance closes every event with variance explained", "strategic_priority": "A defensible new EBITDA line" },
+    { "capability": "Optimized charging with hard guarantees", "team_outcome": "Households save money and keep control", "strategic_priority": "Social license to scale" },
+    { "capability": "Decision inbox with audit trail", "team_outcome": "Program team acts in minutes with fairness built in", "strategic_priority": "Regulator-ready growth" },
+    { "capability": "One governed data foundation", "team_outcome": "Every persona works from the same truth", "strategic_priority": "A repeatable pattern for heat, battery, industrial flex" }
+  ],
+  "agenda": [
+    {
+      "headline": "100,000 cars and one boiler become your next power plant",
+      "altitude_served": ["Executive"],
+      "tell_setup": "Flexibility is the one lever that scales with renewables. I'll open with a two-minute portfolio story, so you can size the prize before we prove the machinery.",
+      "show": {
+        "capability": "The aggregated flexibility envelope",
+        "steps": [
+          "One EV charging overnight — say: everything that follows is just this, multiplied.",
+          "Scroll to 100,000 EVs, ~200 MW, on an ordinary day, no storm.",
+          "A district-heating boiler backs down inside the same envelope.",
+          "Land on the hypothesis revenue range with every car still charged on time."
+        ]
+      },
+      "tell_anchor": "Every orchestrated MW is capex you don't buy. The rest of today proves it's running machinery, not a concept."
+    },
+    {
+      "headline": "A pattern, not a project: one foundation carries every phase",
+      "altitude_served": ["Executive"],
+      "tell_setup": "Everything you're about to see runs off one shared, governed foundation. I'll trace it now, so you can judge every proof point against that single-foundation claim.",
+      "show": {
+        "capability": "One governed data foundation",
+        "steps": [
+          "Vehicle telematics, meters, prices, and weather converge into one store.",
+          "Watch a euro on the P&L trace back to a single dispatch interval.",
+          "Say: heat, batteries, and the boiler slot onto this, unbuilt from scratch."
+        ]
+      },
+      "tell_anchor": "One foundation, not four projects — that's why heat and hydro-adjacent flex arrive in months, not years."
+    },
+    {
+      "headline": "Turn 100,000 customers into one number the desk can sell",
+      "altitude_served": ["Executive"],
+      "tell_setup": "A fleet is bankable only if the desk knows deliverable megawatts now, with confidence. I'll show today's live desk view, so you can see enrollment become a market-grade asset.",
+      "show": {
+        "capability": "Portfolio-level probabilistic forecast",
+        "steps": [
+          "Watch the desk's live number move as cars plug in for the evening.",
+          "Say: every enrolled customer sits inside this single, current figure.",
+          "The 48-hour band narrows toward delivery — say: this is what we bid."
+        ]
+      },
+      "tell_anchor": "Confidence bands turn customers into capacity a TSO will pay for — that's what makes 200,000 customers investable."
+    },
+    {
+      "headline": "A new earnings line with no tariff increase, no rate case",
+      "altitude_served": ["Executive"],
+      "tell_setup": "This margin survives a board only if every euro traces to settlement. I'll walk one event bid to bank, so you can see it audited like generation revenue.",
+      "show": {
+        "capability": "Dispatch-to-settlement traceability",
+        "steps": [
+          "Watch one bid clear into a Nordic balancing product at its price.",
+          "Open that event: say, here's the delivered variance, hidden from no one.",
+          "Land on €312K net YTD at €42 pilot cost per customer per year."
+        ]
+      },
+      "tell_anchor": "A new EBITDA line needing no tariff increase or new asset — and one you can defend to the board and regulator."
+    },
+    {
+      "headline": "0.4% opt-out: the social license that lets this scale",
+      "altitude_served": ["Executive"],
+      "tell_setup": "One bad dispatch headline can cap enrollment for years. I'll show what the customer sees, so you can judge whether this earns trust at 200,000 customers.",
+      "show": {
+        "capability": "Optimized charging with hard guarantees",
+        "steps": [
+          "Watch charging quietly shift off the €350/MWh evening spike overnight.",
+          "Say: €2.12 saved, car guaranteed ready by 07:30, no exceptions.",
+          "Say: one tap overrides any of it — the customer never loses control."
+        ]
+      },
+      "tell_anchor": "0.4% opt-out proves the social license is holding — the scarce asset in this market, not the technology."
+    },
+    {
+      "headline": "Run it in minutes, defend it for seven years",
+      "altitude_served": ["Executive"],
+      "tell_setup": "Scale multiplies what can go wrong — over-dispatch, an unexplainable settlement. I'll show the command view, so you can grow without growing governance risk.",
+      "show": {
+        "capability": "Decision inbox with audit trail",
+        "steps": [
+          "Open a fairness flag on five over-dispatched customers, pre-modelled.",
+          "Say: you see the trade-off and the exact message before you commit.",
+          "Say: every action is tamper-proof and traceable for seven years."
+        ]
+      },
+      "tell_anchor": "Fairness and auditability let you say yes to growth — governance here enables speed instead of braking it."
+    }
+  ],
+  "benefit_by_altitude": {
+    "capability": "Decision inbox with audit trail",
+    "operational": "A flagged decision to review, not a screen to babysit — the trade-off is already modelled for you.",
+    "managerial": "Scale the program without scaling headcount — exceptions surface themselves, resolved in minutes.",
+    "executive": "Growth capped by data quality alone, never by governance risk — a board that trusts the scorecard."
+  }
+}

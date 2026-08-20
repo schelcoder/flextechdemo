@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Envelope Explorer · Energy Company VPP</title>
+<style>
+  :root{
+    --green:#2DE283; --green-l:#5CEB9F; --green-d:#1FB868;
+    --ivy:#0A4F33; --ivy-d:#063521;
+    --lav:#BCA0F2; --lav-d:#8E74C9;
+    --black:#0A0F0D; --black2:#0A0A0A;
+    --surf:#0D1F17; --surf2:#10261B;
+    --off:#F7F5F2; --white:#FFFFFF;
+    --hair:rgba(255,255,255,0.08);
+    --coral:#FF6B5C; --coral-d:#F2552E;
+    --amber:#E8A33D;
+    --txt-dim:rgba(247,245,242,0.55);
+    --txt-dimmer:rgba(247,245,242,0.34);
+    --font:"Inter","Helvetica Neue","Segoe UI",system-ui,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:auto;color-scheme:dark;}
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--black);}
+  ::-webkit-scrollbar-thumb{background:rgba(45,226,131,0.22);border-radius:5px;border:2px solid var(--black);}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(45,226,131,0.42);}
+  body{
+    font-family:var(--font);
+    background:var(--black);
+    color:var(--off);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  /* ---------- ambient backdrop ---------- */
+  #ambient{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.5;z-index:0;pointer-events:none;will-change:transform;}
+  .orb.g{background:radial-gradient(circle,rgba(45,226,131,0.45),transparent 70%);}
+  .orb.l{background:radial-gradient(circle,rgba(188,160,242,0.40),transparent 70%);}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+    background-image:radial-gradient(rgba(255,255,255,0.9) 0.5px,transparent 0.5px);
+    background-size:3px 3px;}
+
+  /* ---------- header ---------- */
+  header{
+    position:fixed;top:0;left:0;right:0;height:62px;z-index:50;
+    display:flex;align-items:center;gap:22px;
+    padding:0 30px;
+    background:linear-gradient(180deg,rgba(10,15,13,0.96),rgba(10,15,13,0.72) 70%,transparent);
+    backdrop-filter:blur(8px);
+  }
+  .brandmark{display:flex;align-items:center;gap:11px;}
+  .logo{width:26px;height:26px;position:relative;}
+  .logo svg{display:block;}
+  .brand-txt{display:flex;flex-direction:column;line-height:1.05;}
+  .brand-txt b{font-size:13.5px;font-weight:700;letter-spacing:-0.01em;color:var(--white);}
+  .brand-txt span{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--txt-dim);}
+  .header-sep{width:1px;height:26px;background:var(--hair);}
+  .concept-name{font-size:13px;font-weight:600;letter-spacing:0.02em;color:var(--green-l);}
+  .concept-name em{font-style:normal;color:var(--txt-dim);font-weight:500;}
+
+  .legend{margin-left:auto;display:flex;gap:16px;align-items:center;}
+  .lg{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:0.04em;color:var(--txt-dim);white-space:nowrap;}
+  .lg .sw{width:16px;height:9px;border-radius:2px;}
+  .sw.up{background:linear-gradient(90deg,rgba(45,226,131,0.85),rgba(45,226,131,0.35));}
+  .sw.down{background:linear-gradient(90deg,rgba(255,107,92,0.85),rgba(255,107,92,0.35));}
+  .sw.set{background:var(--green-l);height:3px;box-shadow:0 0 8px var(--green-l);}
+  .sw.cone{background:linear-gradient(90deg,rgba(188,160,242,0.75),rgba(188,160,242,0.3));}
+  .sw.fcr{background:rgba(92,235,159,0.22);border:1px dashed rgba(92,235,159,0.75);}
+
+  /* ---------- progress rail ---------- */
+  #rail{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:40;
+    display:flex;flex-direction:column;gap:13px;}
+  .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid rgba(247,245,242,0.25);
+    background:transparent;transition:all .4s cubic-bezier(.4,0,.2,1);cursor:pointer;position:relative;}
+  .dot.active{background:var(--green);border-color:var(--green);box-shadow:0 0 12px rgba(45,226,131,0.7);transform:scale(1.25);}
+  .dot.past{background:rgba(45,226,131,0.4);border-color:rgba(45,226,131,0.5);}
+  .dot .tip{position:absolute;left:20px;top:50%;transform:translateY(-50%);
+    font-size:10.5px;letter-spacing:0.04em;color:var(--txt-dim);white-space:nowrap;opacity:0;
+    pointer-events:none;transition:opacity .25s;background:rgba(13,31,23,0.9);padding:3px 9px;border-radius:6px;border:1px solid var(--hair);}
+  .dot:hover .tip{opacity:1;}
+
+  /* ---------- layout ---------- */
+  .scroller{position:relative;z-index:10;pointer-events:none;}
+  .stage-wrap{position:fixed;inset:0;height:100vh;width:100%;z-index:5;}
+  #stage{position:absolute;inset:0;}
+
+  /* caption column */
+  .steps{position:relative;z-index:20;width:42%;max-width:560px;margin-left:6.5%;pointer-events:none;}
+  .step{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 4px;}
+  .step .card{
+    background:linear-gradient(165deg,rgba(13,31,23,0.78),rgba(10,15,13,0.72));
+    border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:30px 34px 32px;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 24px 70px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05);}
+  .step .kicker{font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--green);
+    margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .step .kicker .num{font-variant-numeric:tabular-nums;color:var(--txt-dimmer);}
+  .step .kicker .line{flex:0 0 30px;height:1px;background:linear-gradient(90deg,var(--green),transparent);}
+  .step h2{font-size:33px;font-weight:700;letter-spacing:-0.025em;line-height:1.08;margin-bottom:16px;color:var(--white);}
+  .step h2 .hl{color:var(--green-l);}
+  .step h2 .hlc{color:var(--coral);}
+  .step h2 .hll{color:var(--lav);}
+  .step p{font-size:15.5px;line-height:1.6;color:rgba(247,245,242,0.74);max-width:430px;font-weight:400;}
+  .step p b{color:var(--off);font-weight:600;}
+  .step .fig{font-variant-numeric:tabular-nums;font-weight:650;color:var(--green-l);}
+  .step .figc{font-variant-numeric:tabular-nums;font-weight:650;color:var(--coral);}
+  .step .figl{font-variant-numeric:tabular-nums;font-weight:650;color:var(--lav);}
+  .stat-row{display:flex;gap:30px;margin-top:24px;}
+  .stat{display:flex;flex-direction:column;gap:3px;}
+  .stat .v{font-size:25px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:var(--white);}
+  .stat .v.g{color:var(--green-l);}
+  .stat .v.l{color:var(--lav);}
+  .stat .v.c{color:var(--coral);}
+  .stat .k{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt-dim);}
+
+  /* intro / outro full panels */
+  .intro,.outro{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;text-align:center;position:relative;z-index:20;padding:0 40px;}
+  .intro h1{font-size:78px;font-weight:800;letter-spacing:-0.04em;line-height:0.98;color:var(--white);
+    margin-bottom:22px;}
+  .intro h1 .grad{background:linear-gradient(100deg,var(--green) 10%,var(--green-l) 45%,var(--lav) 95%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .intro .sub{font-size:18px;color:rgba(247,245,242,0.7);max-width:640px;line-height:1.55;}
+  .intro .tag{font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--green);margin-bottom:30px;}
+  .scroll-cue{position:absolute;bottom:42px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--txt-dim);font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;}
+  .scroll-cue .mouse{width:20px;height:31px;border:1.6px solid rgba(247,245,242,0.35);border-radius:11px;position:relative;}
+  .scroll-cue .mouse i{position:absolute;left:50%;top:6px;width:3px;height:6px;border-radius:2px;background:var(--green-l);transform:translateX(-50%);
+    animation:wheel 1.8s ease-in-out infinite;}
+  @keyframes wheel{0%{opacity:0;transform:translate(-50%,0);}30%{opacity:1;}70%{opacity:1;transform:translate(-50%,9px);}100%{opacity:0;transform:translate(-50%,9px);}}
+
+  /* outro hero summary card */
+  .hero-card{width:min(960px,90vw);background:linear-gradient(155deg,rgba(13,31,23,0.92),rgba(10,15,13,0.92));
+    border:1px solid var(--hair);border-radius:22px;padding:42px 48px;backdrop-filter:blur(10px);
+    box-shadow:0 30px 90px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.05);}
+  .hero-card .eyebrow{font-size:11px;letter-spacing:0.26em;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+  .hero-card h2{font-size:42px;font-weight:800;letter-spacing:-0.03em;color:var(--white);margin-bottom:6px;}
+  .hero-card .lede{font-size:15px;color:rgba(247,245,242,0.66);max-width:560px;line-height:1.55;margin-bottom:30px;}
+  .hero-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border-radius:14px;overflow:hidden;border:1px solid var(--hair);}
+  .hero-cell{background:rgba(10,15,13,0.7);padding:22px 20px;display:flex;flex-direction:column;gap:6px;}
+  .hero-cell .hv{font-size:30px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-0.025em;line-height:1;}
+  .hero-cell .hv.g{color:var(--green-l);}
+  .hero-cell .hv.l{color:var(--lav);}
+  .hero-cell .hv.w{color:var(--white);}
+  .hero-cell .hk{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--txt-dim);}
+  .hero-cell .hs{font-size:11px;color:var(--txt-dimmer);}
+  .hero-foot{margin-top:26px;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--txt-dim);letter-spacing:0.02em;}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--hair);border-radius:999px;font-size:11px;color:var(--off);letter-spacing:0.03em;}
+  .pill .pd{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+  .restart{margin-top:30px;background:transparent;border:1px solid var(--hair);color:var(--off);
+    padding:11px 22px;border-radius:999px;font-family:var(--font);font-size:12.5px;letter-spacing:0.05em;cursor:pointer;
+    transition:all .3s;pointer-events:auto;}
+  .restart:hover{border-color:var(--green);color:var(--green-l);background:rgba(45,226,131,0.06);}
+
+  /* parameter card overlay on stage (appears step 1+) */
+  #paramCard{position:absolute;right:46px;top:96px;width:248px;z-index:25;
+    background:linear-gradient(160deg,rgba(13,31,23,0.9),rgba(10,15,13,0.85));
+    border:1px solid var(--hair);border-radius:16px;padding:18px 19px;backdrop-filter:blur(9px);
+    opacity:0;transform:translateY(-8px);transition:opacity .6s,transform .6s;pointer-events:none;
+    box-shadow:0 18px 50px rgba(0,0,0,0.45);}
+  #paramCard.show{opacity:1;transform:translateY(0);}
+  #paramCard h4{font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+  #paramCard h4 .blip{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  .prow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.045);}
+  .prow:last-child{border-bottom:none;}
+  .prow .pk{font-size:11px;color:var(--txt-dim);letter-spacing:0.01em;}
+  .prow .pv{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--off);}
+  .prow .pv.g{color:var(--green-l);}
+
+  /* cadence ticker */
+  #cadence{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);z-index:25;
+    font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--txt-dim);
+    display:flex;align-items:center;gap:9px;opacity:0;transition:opacity .6s;}
+  #cadence.show{opacity:1;}
+  #cadence .tick{width:7px;height:7px;border-radius:50%;background:var(--green-l);box-shadow:0 0 8px var(--green-l);animation:pulse 1.5s ease-in-out infinite;}
+
+  @media (max-width:1240px){
+    .steps{width:46%;margin-left:5.5%;}
+    .step h2{font-size:28px;}
+    .legend{gap:11px;}
+    .lg{font-size:9.5px;}
+    #paramCard{width:218px;right:30px;}
+    .intro h1{font-size:60px;}
+  }
+  @media (max-width:1100px){
+    .legend .lg span{display:none;}
+  }
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:repeat(2,1fr);}
+    .steps{width:60%;}
+    .intro h1{font-size:46px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .scroll-cue .mouse i,#paramCard h4 .blip,#cadence .tick,.pill .pd{animation:none;}
+  }
+
+  /* hover readout tooltip */
+  #hoverTip{position:fixed;z-index:60;pointer-events:none;opacity:0;transition:opacity .15s;
+    background:rgba(10,15,13,0.92);border:1px solid var(--hair);border-radius:10px;
+    padding:10px 13px;font-size:11.5px;backdrop-filter:blur(8px);min-width:168px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+  #hoverTip .ht-clock{font-weight:700;color:var(--white);letter-spacing:0.06em;margin-bottom:6px;font-variant-numeric:tabular-nums;}
+  #hoverTip .ht-row{display:flex;justify-content:space-between;gap:16px;padding:1.5px 0;color:var(--txt-dim);white-space:nowrap;}
+  #hoverTip .ht-row .hv{font-variant-numeric:tabular-nums;font-weight:600;color:var(--off);}
+  #hoverTip .swd{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;}
+</style>
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Envelope Explorer&nbsp;&nbsp;<em>· EV Virtual Power Plant</em></div>
+  <div class="legend">
+    <div class="lg"><span class="sw up"></span><span>Up-flex</span></div>
+    <div class="lg"><span class="sw down"></span><span>Down-flex</span></div>
+    <div class="lg"><span class="sw set"></span><span>Setpoint</span></div>
+    <div class="lg"><span class="sw cone"></span><span>Energy cone</span></div>
+    <div class="lg"><span class="sw fcr"></span><span>FCR-D band</span></div>
+  </div>
+</header>
+
+<nav id="rail"></nav>
+
+<!-- The pinned stage -->
+<div class="stage-wrap">
+  <svg id="stage" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-label="Power Envelope stage">
+    <defs>
+      <linearGradient id="gUp" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2DE283" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#2DE283" stop-opacity="0.06"/>
+      </linearGradient>
+      <linearGradient id="gDown" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FF6B5C" stop-opacity="0.10"/>
+        <stop offset="100%" stop-color="#FF6B5C" stop-opacity="0.46"/>
+      </linearGradient>
+      <linearGradient id="gCone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#BCA0F2" stop-opacity="0.46"/>
+        <stop offset="55%" stop-color="#8E74C9" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="#BCA0F2" stop-opacity="0.40"/>
+      </linearGradient>
+      <linearGradient id="gSet" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#5CEB9F"/>
+        <stop offset="100%" stop-color="#2DE283"/>
+      </linearGradient>
+      <radialGradient id="gNow" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stop-color="#5CEB9F" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#5CEB9F" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3.4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glowSoft" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="7" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <clipPath id="plotClip"><rect id="plotClipRect" x="0" y="0" width="1440" height="900"/></clipPath>
+    </defs>
+
+    <!-- grid + axes -->
+    <g id="gAxes"></g>
+    <!-- plot content (clipped) -->
+    <g clip-path="url(#plotClip)">
+      <g id="gCone_"></g>
+      <g id="gDown_"></g>
+      <g id="gUp_"></g>
+      <g id="gBaseline"></g>
+      <g id="gFcrd"></g>
+      <g id="gEnergyPaths"></g>
+      <g id="gSetpoint"></g>
+      <g id="gEvents"></g>
+      <g id="gNowLine"></g>
+    </g>
+    <!-- axis labels & callouts (unclipped) -->
+    <g id="gLabels"></g>
+    <g id="gCallouts"></g>
+    <g id="gTargetBadge"></g>
+  </svg>
+
+  <div id="paramCard">
+    <h4><span class="blip"></span>PE Parameters</h4>
+    <div id="paramRows"></div>
+  </div>
+
+  <div id="cadence"><span class="tick"></span><span id="cadenceTxt">Asset operator confirms PE · FlexIT setpoint every 15 min</span></div>
+  <div id="hoverTip"></div>
+</div>
+
+<!-- Scroll content -->
+<div class="scroller" id="scroller">
+
+  <section class="intro" data-step="-1">
+    <div class="tag">That Nordic Energy</div>
+    <h1>The shape of<br><span class="grad">flexibility.</span></h1>
+    <p class="sub">4,218 home EV chargers, aggregated into one Virtual Power Plant.
+      Scroll to watch a single night's charge become a tradable <b>Power Envelope</b> —
+      and €4,218 of grid-balancing revenue.</p>
+    <div class="scroll-cue"><div class="mouse"><i></i></div>Scroll</div>
+  </section>
+
+  <div class="steps">
+
+  <section class="step" data-step="0">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">01</span> One car, one night</div>
+    <h2>It starts with <span class="hl">one EV</span> that needs to charge.</h2>
+    <p>A driver plugs in at <b>18:00</b> with the battery at <span class="fig">45.7%</span>.
+      They need <span class="fig">80%</span> by the <b>16:00</b> departure. At <b class="fig">7.4 kW</b>,
+      there's hours of slack in <em>when</em> those electrons flow — and that slack is worth money.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g">45.7%</span><span class="k">Arrival SOC</span></div>
+      <div class="stat"><span class="v">7.4 kW</span><span class="k">Charge rate</span></div>
+      <div class="stat"><span class="v">22 h</span><span class="k">Plugged-in window</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="1">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">02</span> The fleet baseline</div>
+    <h2>Multiply by <span class="hl">4,218 cars</span> → a fleet schedule.</h2>
+    <p>Each car's plan, summed, becomes the <b>baseline</b> — Energy Company's planned charging
+      curve across the 24-hour horizon. It peaks near <span class="fig">5.7 MW</span> deep
+      in the night when prices are low and the grid is calm.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v">4,218</span><span class="k">Aggregated EVs</span></div>
+      <div class="stat"><span class="v g">5.7 MW</span><span class="k">Baseline peak</span></div>
+      <div class="stat"><span class="v">210 MWh</span><span class="k">Fleet capacity</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="2">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">03</span> Up-flex</div>
+    <h2>Above the line: <span class="hl">charge harder</span>.</h2>
+    <p>Every car not yet full can speed up on command. The room between baseline and
+      the ceiling <b>p<sub>max</sub></b> is <span class="fig">up-flex</span> — the green band.
+      It's capacity Energy Company can <em>add</em> to the grid to soak up surplus wind, reaching
+      up to <span class="fig">9.3 MW</span>.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g">+3.6 MW</span><span class="k">Up-flex (avg)</span></div>
+      <div class="stat"><span class="v g">9.3 MW</span><span class="k">Ceiling p<sub>max</sub></span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="3">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">04</span> Down-flex</div>
+    <h2>Below the line: <span class="hlc">ease off</span>.</h2>
+    <p>The fleet can also slow or pause — the coral band down to the floor
+      <b>p<sub>min</sub></b>. That's <span class="figc">down-flex</span>: power Energy Company can
+      <em>remove</em> in milliseconds when the grid needs relief, without a single driver
+      missing their morning.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v c">−1.9 MW</span><span class="k">Down-flex (avg)</span></div>
+      <div class="stat"><span class="v c">0.3 MW</span><span class="k">Floor p<sub>min</sub></span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="4">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">05</span> The Power Envelope</div>
+    <h2>Together they form the <span class="hl">Power&nbsp;Envelope</span>.</h2>
+    <p>Bound above by <b>p<sub>max</sub></b> and below by <b>p<sub>min</sub></b>, the band is the
+      full operating space for the fleet — every megawatt the trading desk can dispatch
+      at any instant across the night. <span class="fig">8.4 MW</span> of flexibility, live.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g">8.4 MW</span><span class="k">Max flexibility</span></div>
+      <div class="stat"><span class="v">96</span><span class="k">15-min steps</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="5">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">06</span> The Energy cone</div>
+    <h2>The <span class="hll">energy cone</span> that must land on target.</h2>
+    <p>Integrate power over time and you get cumulative energy. Today's <b>96 MWh</b> is certain,
+      so the cone is narrow now — then it <b>fans open</b> as choices multiply mid-horizon,
+      before <b>converging</b> onto the departure window <span class="figl">[168, 184] MWh</span>.
+      Every feasible night lives inside this lavender lens.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v l">[168,184]</span><span class="k">Departure target · MWh</span></div>
+      <div class="stat"><span class="v l">+59 MWh</span><span class="k">Widest spread</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="6">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">07</span> Reserve capability</div>
+    <h2>Inside the band sits sellable <span class="hl">FCR-D</span>.</h2>
+    <p>A slice of the envelope is certified frequency reserve — symmetric headroom the desk
+      can pre-sell to the TSO and hold ready against a <b>50.00 Hz</b> grid. Around
+      <span class="fig">2.3 MW up</span> and <span class="fig">1.9 MW down</span>, continuously.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g">2.3 MW</span><span class="k">FCR-D up cap.</span></div>
+      <div class="stat"><span class="v g">1.9 MW</span><span class="k">FCR-D down cap.</span></div>
+      <div class="stat"><span class="v">50.02 Hz</span><span class="k">Grid now</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="7">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">08</span> The instructed setpoint</div>
+    <h2>The trader commits a <span class="hl">setpoint</span>.</h2>
+    <p>The bright filament is the live dispatch the desk instructs — riding inside the band.
+      At <b>01:45</b> an <b class="fig">FCR-D activation</b> drives it up toward <span class="fig">8.8 MW</span>;
+      then at the <b>16:30</b> price spike it dives toward the floor at <span class="figc">0.83 MW</span>,
+      curtailing load exactly when power is dearest.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g">8.8 MW</span><span class="k">Night FCR-D peak</span></div>
+      <div class="stat"><span class="v c">0.83 MW</span><span class="k">Evening curtailment</span></div>
+      <div class="stat"><span class="v">350 €/MWh</span><span class="k">Spike price</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section class="step" data-step="8">
+    <div class="card">
+    <div class="kicker"><span class="line"></span><span class="num">09</span> Revenue accrues</div>
+    <h2>Every dispatch becomes <span class="hl">revenue</span>.</h2>
+    <p>Deliver the curtailment, hold the reserve, hit the target SOC — and value accrues
+      across FCR-D, FCR-N, mFRR and arbitrage. <span class="fig">€4,218</span> earned today,
+      at <b class="fig">96.2%</b> delivery success, with drivers still charged on time.</p>
+    <div class="stat-row">
+      <div class="stat"><span class="v g" id="revToday">€0</span><span class="k">Revenue today</span></div>
+      <div class="stat"><span class="v">96.2%</span><span class="k">Delivery success</span></div>
+      <div class="stat"><span class="v">7</span><span class="k">Events today</span></div>
+    </div>
+    </div>
+  </section>
+
+  </div><!-- /.steps -->
+
+
+  <section class="outro" data-step="9">
+    <div class="hero-card">
+      <div class="eyebrow">The Power Envelope · One night, one fleet</div>
+      <h2>From 4,218 cars to <span style="color:var(--green-l)">€746k</span> a year.</h2>
+      <p class="lede">A single tradable abstraction — bounded power, a converging energy cone, and a
+        live instructed setpoint — turns parked EVs into the Nordics' fastest balancing asset.</p>
+      <div class="hero-grid">
+        <div class="hero-cell"><span class="hv g" id="oRevDay">€4,218</span><span class="hk">Revenue today</span><span class="hs">across 7 dispatch events</span></div>
+        <div class="hero-cell"><span class="hv w" id="oRevAnn">€746,130</span><span class="hk">Annualized run-rate</span><span class="hs">YTD €612,847</span></div>
+        <div class="hero-cell"><span class="hv l">[168,184]</span><span class="hk">MWh delivered to target</span><span class="hs">81.5% fleet SOC at 16:00</span></div>
+        <div class="hero-cell"><span class="hv g">8.4 MW</span><span class="hk">Flexibility live</span><span class="hs">5.2 committed · 3.2 free</span></div>
+      </div>
+      <div class="hero-foot">
+        <span class="pill"><span class="pd"></span>Grid 50.02 Hz · balanced</span>
+        <span>Delivery success 96.2% · opt-out 0.4%</span>
+      </div>
+      <button class="restart" id="restartBtn">↑ Replay the envelope</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="vpp-data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var V = (window.VPP) || {};
+  // ---- safe accessors ----
+  function arr(x){return Array.isArray(x)?x:[];}
+  var PE  = arr(V.powerEnvelope);
+  var EE  = arr(V.energyEnvelope);
+  var PARAMS = V.peParameters || {};
+  var PORT = V.portfolioSummary || {};
+  if(PE.length===0){ console.warn("VPP power envelope missing"); }
+
+  // =========================================================
+  //  GEOMETRY  (viewBox 1440 x 900)
+  // =========================================================
+  var VBW=1440, VBH=900;
+  var M = {l:96, r:330, t:108, b:96}; // right margin leaves room for param card / target badge
+  function plotW(){return VBW - M.l - M.r;}
+  function plotH(){return VBH - M.t - M.b;}
+
+  // x: time index 0..95 across plot
+  var N = Math.max(PE.length, EE.length, 1);
+  function xAt(i){ return M.l + (plotW()) * (i/(N-1)); }
+
+  // POWER y-scale (MW)  — fixed domain for stable morph
+  var P_MIN_DOM = 0, P_MAX_DOM = 9.6;
+  function yP(mw){ return M.t + plotH() * (1 - (mw - P_MIN_DOM)/(P_MAX_DOM - P_MIN_DOM)); }
+
+  // ENERGY y-scale (MWh)
+  var E_MIN_DOM = 80, E_MAX_DOM = 200;
+  function yE(mwh){ return M.t + plotH() * (1 - (mwh - E_MIN_DOM)/(E_MAX_DOM - E_MIN_DOM)); }
+
+  // =========================================================
+  //  Build static path data once
+  // =========================================================
+  function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function easeInOut(t){t=clamp(t,0,1);return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+  function easeOut(t){t=clamp(t,0,1);return 1-Math.pow(1-t,3);}
+
+  function nf(v){ return (isFinite(v)?v:0).toFixed(2); }
+  // area path between top fn and bottom fn over indices, optionally limited by progress p (0..1)
+  function bandPath(topY, botY, p){
+    p = (p===undefined)?1:clamp(p,0,1);
+    var lim = Math.max(1, Math.round((N-1)*p));
+    var d="M";
+    for(var i=0;i<=lim;i++){ d += (i?"L":"") + nf(xAt(i))+" "+nf(topY(i))+" "; }
+    for(var j=lim;j>=0;j--){ d += "L"+nf(xAt(j))+" "+nf(botY(j))+" "; }
+    return d+"Z";
+  }
+  function linePath(yfn, p){
+    p=(p===undefined)?1:clamp(p,0,1);
+    var lim=Math.max(0,Math.round((N-1)*p));
+    var d="M";
+    for(var i=0;i<=lim;i++){ d += (i?"L":"")+nf(xAt(i))+" "+nf(yfn(i))+" "; }
+    return d;
+  }
+  // smooth path (catmull-rom -> bezier) for the setpoint filament
+  function smoothLine(pts, p){
+    if(!pts || pts.length===0) return "M0 0";
+    p=(p===undefined)?1:clamp(p,0,1);
+    if(pts.length===1) return "M"+pts[0].x.toFixed(2)+" "+pts[0].y.toFixed(2);
+    var lim=Math.max(1,Math.round((pts.length-1)*p));
+    var d="M"+pts[0].x.toFixed(2)+" "+pts[0].y.toFixed(2);
+    for(var i=0;i<lim;i++){
+      var p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1]||pts[i], p3=pts[i+2]||p2;
+      var c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+      var c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+      d+="C"+c1x.toFixed(2)+" "+c1y.toFixed(2)+" "+c2x.toFixed(2)+" "+c2y.toFixed(2)+" "+p2.x.toFixed(2)+" "+p2.y.toFixed(2);
+    }
+    return d;
+  }
+
+  // y-functions reading PE/EE safely
+  function base(i){ return (PE[i]&&PE[i].baselineMW)||0; }
+  function pmax(i){ return (PE[i]&&PE[i].pMaxMW)||base(i); }
+  function pmin(i){ return (PE[i]&&PE[i].pMinMW)||base(i); }
+  function setp(i){ return (PE[i]&&PE[i].setpointMW)||base(i); }
+  function fcrU(i){ return (PE[i]&&PE[i].fcrdUpMW)||0; }
+  function fcrD(i){ return (PE[i]&&PE[i].fcrdDownMW)||0; }
+  function elo(i){ return (EE[i]&&EE[i].eLoMWh)||0; }
+  function ehi(i){ return (EE[i]&&EE[i].eHiMWh)||0; }
+  function eset(i){ return (EE[i]&&EE[i].eSetMWh)||0; }
+
+  // ---- DOM refs ----
+  var $=function(id){return document.getElementById(id);};
+  var gAxes=$("gAxes"), gLabels=$("gLabels"), gCallouts=$("gCallouts"), gTargetBadge=$("gTargetBadge");
+  var gConeEl=$("gCone_"), gDownEl=$("gDown_"), gUpEl=$("gUp_"),
+      gBase=$("gBaseline"), gFcrd=$("gFcrd"), gEnergyPaths=$("gEnergyPaths"),
+      gSet=$("gSetpoint"), gEvents=$("gEvents"), gNow=$("gNowLine");
+
+  function svgEl(tag,attrs){
+    var e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+    if(attrs)for(var k in attrs){e.setAttribute(k,attrs[k]);}
+    return e;
+  }
+
+  // =========================================================
+  //  STATIC SCAFFOLD: axes + gridlines (drawn once)
+  // =========================================================
+  // POWER axis (left), ENERGY axis (right) — we keep both, fade per phase.
+  var powerGrid=[0,2,4,6,8], energyGrid=[100,120,140,160,180,200];
+
+  function buildAxes(){
+    gAxes.innerHTML="";
+    // frame baseline
+    var px=M.l, py=M.t, pw=plotW(), ph=plotH();
+    // horizontal gridlines for power
+    powerGrid.forEach(function(mw){
+      var y=yP(mw);
+      gAxes.appendChild(svgEl("line",{x1:px,y1:y,x2:px+pw,y2:y,stroke:"rgba(255,255,255,0.05)","stroke-width":1,class:"gridP"}));
+    });
+    // vertical time gridlines every 4h (16 steps) -> clocks
+    for(var i=0;i<N;i+=16){
+      var x=xAt(i);
+      gAxes.appendChild(svgEl("line",{x1:x,y1:py,x2:x,y2:py+ph,stroke:"rgba(255,255,255,0.04)","stroke-width":1}));
+    }
+    // axis bottom rule
+    gAxes.appendChild(svgEl("line",{x1:px,y1:py+ph,x2:px+pw,y2:py+ph,stroke:"rgba(255,255,255,0.14)","stroke-width":1.2}));
+    // left vertical
+    gAxes.appendChild(svgEl("line",{x1:px,y1:py,x2:px,y2:py+ph,stroke:"rgba(255,255,255,0.10)","stroke-width":1}));
+  }
+
+  // axis labels (power left / energy right) live in gLabels; we recompute per phase via opacity groups
+  var powerLabelEls=[], energyLabelEls=[], timeLabelEls=[];
+  function buildLabels(){
+    gLabels.innerHTML="";
+    var px=M.l, ph=plotH(), pw=plotW();
+    // POWER labels (left)
+    powerLabelEls=[];
+    powerGrid.forEach(function(mw){
+      var t=svgEl("text",{x:px-14,y:yP(mw)+4,"text-anchor":"end",class:"tnum",fill:"rgba(247,245,242,0.45)","font-size":12,"font-family":"inherit"});
+      t.textContent=mw;
+      gLabels.appendChild(t); powerLabelEls.push(t);
+    });
+    var pAxisTitle=svgEl("text",{x:px-14,y:M.t-16,"text-anchor":"end",fill:"rgba(45,226,131,0.7)","font-size":11,"letter-spacing":"0.12em","font-family":"inherit"});
+    pAxisTitle.textContent="POWER · MW"; pAxisTitle.setAttribute("id","pAxisTitle");
+    gLabels.appendChild(pAxisTitle); powerLabelEls.push(pAxisTitle);
+
+    // ENERGY labels (right)
+    energyLabelEls=[];
+    energyGrid.forEach(function(mwh){
+      var t=svgEl("text",{x:px+pw+16,y:yE(mwh)+4,"text-anchor":"start",class:"tnum",fill:"rgba(188,160,242,0.6)","font-size":12,"font-family":"inherit",opacity:0});
+      t.textContent=mwh;
+      gLabels.appendChild(t); energyLabelEls.push(t);
+    });
+    var eAxisTitle=svgEl("text",{x:px+pw+16,y:M.t-16,"text-anchor":"start",fill:"rgba(188,160,242,0.8)","font-size":11,"letter-spacing":"0.12em","font-family":"inherit",opacity:0});
+    eAxisTitle.textContent="ENERGY · MWh"; eAxisTitle.setAttribute("id","eAxisTitle");
+    gLabels.appendChild(eAxisTitle); energyLabelEls.push(eAxisTitle);
+
+    // TIME labels (bottom) every 16 steps
+    timeLabelEls=[];
+    for(var i=0;i<N;i+=16){
+      var clk=(PE[i]&&PE[i].clock)||((EE[i]&&EE[i].clock))||"";
+      var t=svgEl("text",{x:xAt(i),y:M.t+ph+26,"text-anchor":"middle",class:"tnum",fill:"rgba(247,245,242,0.4)","font-size":11.5,"font-family":"inherit"});
+      t.textContent=clk;
+      gLabels.appendChild(t); timeLabelEls.push(t);
+    }
+    // last clock
+    var liEl=N-1, clkL=(PE[liEl]&&PE[liEl].clock)||"";
+    var tl=svgEl("text",{x:xAt(liEl),y:M.t+ph+26,"text-anchor":"end",class:"tnum",fill:"rgba(247,245,242,0.4)","font-size":11.5,"font-family":"inherit"});
+    tl.textContent=clkL; gLabels.appendChild(tl); timeLabelEls.push(tl);
+  }
+
+  // =========================================================
+  //  Create the morphing shapes (paths created once, attrs updated)
+  // =========================================================
+  // baseline line
+  var baselineEl=svgEl("path",{fill:"none",stroke:"rgba(247,245,242,0.85)","stroke-width":2.2,"stroke-linecap":"round","stroke-dasharray":"1 7","stroke-linejoin":"round",opacity:0});
+  gBase.appendChild(baselineEl);
+  var baselineSolid=svgEl("path",{fill:"none",stroke:"rgba(247,245,242,0.9)","stroke-width":1.6,opacity:0});
+  gBase.appendChild(baselineSolid);
+
+  // up band + ceiling line
+  var upBandEl=svgEl("path",{fill:"url(#gUp)",stroke:"none",opacity:0});
+  gUpEl.appendChild(upBandEl);
+  var pmaxLineEl=svgEl("path",{fill:"none",stroke:"#2DE283","stroke-width":1.4,opacity:0,"stroke-linejoin":"round"});
+  gUpEl.appendChild(pmaxLineEl);
+
+  // down band + floor line
+  var downBandEl=svgEl("path",{fill:"url(#gDown)",stroke:"none",opacity:0});
+  gDownEl.appendChild(downBandEl);
+  var pminLineEl=svgEl("path",{fill:"none",stroke:"#FF6B5C","stroke-width":1.3,opacity:0,"stroke-linejoin":"round"});
+  gDownEl.appendChild(pminLineEl);
+
+  // FCR-D capability band (around setpoint/baseline)
+  var fcrdBandEl=svgEl("path",{fill:"rgba(92,235,159,0.10)",stroke:"none",opacity:0});
+  gFcrd.appendChild(fcrdBandEl);
+  var fcrdUpLine=svgEl("path",{fill:"none",stroke:"rgba(92,235,159,0.55)","stroke-width":1,"stroke-dasharray":"4 5",opacity:0});
+  var fcrdDnLine=svgEl("path",{fill:"none",stroke:"rgba(92,235,159,0.55)","stroke-width":1,"stroke-dasharray":"4 5",opacity:0});
+  gFcrd.appendChild(fcrdUpLine); gFcrd.appendChild(fcrdDnLine);
+
+  // energy cone
+  var coneEl=svgEl("path",{fill:"url(#gCone)",stroke:"none",opacity:0});
+  gConeEl.appendChild(coneEl);
+  var coneHi=svgEl("path",{fill:"none",stroke:"rgba(188,160,242,0.7)","stroke-width":1.1,opacity:0});
+  var coneLo=svgEl("path",{fill:"none",stroke:"rgba(188,160,242,0.7)","stroke-width":1.1,opacity:0});
+  gConeEl.appendChild(coneHi); gConeEl.appendChild(coneLo);
+  // realized energy path
+  var eSetEl=svgEl("path",{fill:"none",stroke:"#BCA0F2","stroke-width":2.4,"stroke-linecap":"round",opacity:0,filter:"url(#glow)"});
+  gEnergyPaths.appendChild(eSetEl);
+
+  // setpoint filament (glow under + bright over)
+  var setGlowEl=svgEl("path",{fill:"none",stroke:"#2DE283","stroke-width":7,opacity:0,"stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#glowSoft)"});
+  var setEl=svgEl("path",{fill:"none",stroke:"url(#gSet)","stroke-width":2.8,opacity:0,"stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#glow)"});
+  gSet.appendChild(setGlowEl); gSet.appendChild(setEl);
+  var setHead=svgEl("circle",{r:5,fill:"#5CEB9F",opacity:0,filter:"url(#glow)"});
+  var setHeadRing=svgEl("circle",{r:9,fill:"none",stroke:"#5CEB9F","stroke-width":1.2,opacity:0});
+  gSet.appendChild(setHeadRing); gSet.appendChild(setHead);
+
+  // single EV illustration (step 0): a little charging glyph + its own mini need bar
+  var evGroup=svgEl("g",{opacity:0,id:"evGroup"});
+  gEvents.appendChild(evGroup);
+
+  // event markers (dispatch dots)
+  var nightMarker=svgEl("g",{opacity:0,id:"nightMarker"});
+  var eveMarker=svgEl("g",{opacity:0,id:"eveMarker"});
+  gEvents.appendChild(nightMarker); gEvents.appendChild(eveMarker);
+
+  // now-line sweep
+  var nowLineEl=svgEl("line",{stroke:"rgba(92,235,159,0.5)","stroke-width":1.3,opacity:0,"stroke-dasharray":"3 4"});
+  var nowGlow=svgEl("ellipse",{rx:18,ry:0,fill:"url(#gNow)",opacity:0});
+  gNow.appendChild(nowLineEl);
+
+  // =========================================================
+  //  Precompute setpoint screen points (recomputed on resize)
+  // =========================================================
+  var setPoints=[];
+  function computeSetPoints(){
+    setPoints=[];
+    for(var i=0;i<N;i++){ setPoints.push({x:xAt(i), y:yP(setp(i))}); }
+  }
+
+  // =========================================================
+  //  PHASE STATE  — drives the whole stage from scroll
+  //  phase is a float; integer part = step index, fraction = transition
+  // =========================================================
+  var STEPS = 11; // -1 intro shown as step "before 0"; we treat 0..9 + outro(10-ish)
+  // We'll map: data-step -1 (intro), 0..8 (nine steps), 9 (outro)
+  // amount visible of each layer is a function of phase
+
+  // helper: smooth gate that ramps 0->1 as phase goes from a to b
+  function gate(phase,a,b){ return easeInOut((phase-a)/(b-a)); }
+  function gateOut(phase,a,b){ return 1-easeInOut((phase-a)/(b-a)); }
+
+  // current animated revenue (count-up)
+  var revAnim={cur:0, target:0};
+
+  function render(phase){
+    var pw=plotW(), ph=plotH(), px=M.l, py=M.t;
+
+    // ----- AXES / param card / cadence visibility -----
+    var axesOn = gate(phase,-0.6,0.2);
+    gAxes.style.opacity = axesOn;
+    powerLabelEls.forEach(function(e){e.style.opacity=axesOn;});
+    timeLabelEls.forEach(function(e){e.style.opacity=axesOn;});
+
+    // param card appears at step 1+, but yields to the energy axis / target
+    // badge during the cone steps and to the hero card in the outro
+    var pc=$("paramCard");
+    var pcShow = phase>=0.7 && !(phase>=4.5 && phase<=6.5) && phase<8.6;
+    if(pcShow){ pc.classList.add("show"); } else { pc.classList.remove("show"); }
+    var cad=$("cadence");
+    if(phase>=6.6 && phase<=8.75){ cad.classList.add("show"); } else { cad.classList.remove("show"); }
+
+    // ================= STEP 0: single EV =================
+    var evOn = gate(phase,-0.4,0.15) * gateOut(phase,0.7,1.4);
+    evGroup.setAttribute("opacity", evOn);
+    if(evOn>0.01) drawEV(evOn, phase);
+
+    // ================= BASELINE (step1+) =================
+    // baseline draws on during step1, stays. Use progress for draw-on.
+    var baseProg = easeOut(gate(phase,0.55,1.6));
+    var baseOn = gate(phase,0.55,1.0);
+    baselineSolid.setAttribute("d", linePath(function(i){return yP(base(i));}, baseProg));
+    baselineSolid.setAttribute("opacity", baseOn*0.9);
+    // dashed baseline reference (kept faint once bands appear, fades a touch under cone phase)
+    baselineEl.setAttribute("d", linePath(function(i){return yP(base(i));},1));
+    var baseDashOn = gate(phase,1.6,2.0)*gateOut(phase,5.4,6.2)*0.75 + gate(phase,6.2,6.4)*0.5;
+    baselineEl.setAttribute("opacity", clamp(baseDashOn,0,0.8));
+
+    // ================= UP-FLEX (step2) =================
+    var upProg = easeOut(gate(phase,1.55,2.55));
+    var upOn = gate(phase,1.6,2.1);
+    upBandEl.setAttribute("d", bandPath(function(i){return yP(pmax(i));}, function(i){return yP(base(i));}, upProg));
+    pmaxLineEl.setAttribute("d", linePath(function(i){return yP(pmax(i));}, upProg));
+    // up band fades when energy-cone takes the stage (step6) but returns for setpoint
+    var bandPersist = gateOut(phase,5.3,6.1)*0.55 + gate(phase,6.1,6.6)*0.55 + (phase<5.3?(upOn-0.55*0):0);
+    var upFill = upOn * (phase<5.3?1:(0.55 + 0.45*gate(phase,6.0,6.8)));
+    upBandEl.setAttribute("opacity", clamp(upFill,0,1));
+    pmaxLineEl.setAttribute("opacity", clamp(upOn*(phase<5.3?1:0.75),0,1));
+
+    // ================= DOWN-FLEX (step3) =================
+    var dnProg = easeOut(gate(phase,2.55,3.55));
+    var dnOn = gate(phase,2.6,3.1);
+    downBandEl.setAttribute("d", bandPath(function(i){return yP(base(i));}, function(i){return yP(pmin(i));}, dnProg));
+    pminLineEl.setAttribute("d", linePath(function(i){return yP(pmin(i));}, dnProg));
+    var dnFill = dnOn * (phase<5.3?1:(0.5 + 0.5*gate(phase,6.0,6.8)));
+    downBandEl.setAttribute("opacity", clamp(dnFill,0,1));
+    pminLineEl.setAttribute("opacity", clamp(dnOn*(phase<5.3?1:0.7),0,1));
+
+    // ================= STEP4: envelope emphasis (pmin/pmax pulse) — handled by callouts
+    // ================= STEP5: ENERGY CONE =================
+    var coneProg = easeOut(gate(phase,4.55,5.7));
+    var coneOn = gate(phase,4.6,5.2);
+    // cone fades a bit during setpoint/revenue steps so band reads, but stays present
+    var coneFade = (phase<6.8)?1:(0.62);
+    coneEl.setAttribute("d", bandPath(function(i){return yE(ehi(i));}, function(i){return yE(elo(i));}, coneProg));
+    coneEl.setAttribute("opacity", clamp(coneOn*coneFade,0,1));
+    coneHi.setAttribute("d", linePath(function(i){return yE(ehi(i));}, coneProg));
+    coneLo.setAttribute("d", linePath(function(i){return yE(elo(i));}, coneProg));
+    coneHi.setAttribute("opacity", clamp(coneOn*coneFade,0,1));
+    coneLo.setAttribute("opacity", clamp(coneOn*coneFade,0,1));
+    // realized energy path
+    var eSetProg = easeOut(gate(phase,5.0,6.0));
+    eSetEl.setAttribute("d", linePath(function(i){return yE(eset(i));}, eSetProg));
+    eSetEl.setAttribute("opacity", clamp(coneOn*coneFade,0,0.95));
+    // energy axis labels (recede once the cone chapter is over)
+    var eAxOn = clamp(coneOn,0,1)*(phase<6.3?1:0.35);
+    energyLabelEls.forEach(function(e){e.style.opacity=eAxOn*0.9;});
+
+    // target badge [168,184] — appears as cone converges, retires after its chapter
+    var tgtOn = gate(phase,5.2,5.9)*coneFade*gateOut(phase,6.4,7.2);
+    drawTargetBadge(tgtOn);
+
+    // ================= STEP6: FCR-D =================
+    var fcrProg = easeOut(gate(phase,6.0,7.0));
+    var fcrOn = gate(phase,6.05,6.6)*gateOut(phase,7.4,8.1); // present in step7 too then fade
+    fcrOn = gate(phase,6.05,6.6) * (phase<7.4?1:gateOut(phase,7.4,8.2)*0.5+0.0);
+    // FCR-D band drawn around baseline (capability headroom)
+    fcrdBandEl.setAttribute("d", bandPath(
+      function(i){return yP(base(i)+fcrU(i));},
+      function(i){return yP(Math.max(0,base(i)-fcrD(i)));}, fcrProg));
+    fcrdUpLine.setAttribute("d", linePath(function(i){return yP(base(i)+fcrU(i));}, fcrProg));
+    fcrdDnLine.setAttribute("d", linePath(function(i){return yP(Math.max(0,base(i)-fcrD(i)));}, fcrProg));
+    fcrdBandEl.setAttribute("opacity", clamp(fcrOn,0,1));
+    fcrdUpLine.setAttribute("opacity", clamp(fcrOn*0.9,0,1));
+    fcrdDnLine.setAttribute("opacity", clamp(fcrOn*0.9,0,1));
+
+    // ================= STEP7: SETPOINT =================
+    var setProg = easeOut(gate(phase,7.0,8.0));
+    var setOn = gate(phase,7.05,7.6);
+    var setD = smoothLine(setPoints, setProg);
+    setEl.setAttribute("d", setD);
+    setGlowEl.setAttribute("d", setD);
+    setEl.setAttribute("opacity", clamp(setOn,0,1));
+    setGlowEl.setAttribute("opacity", clamp(setOn*0.5,0,1));
+    // moving head at the leading edge of the draw
+    var headIdx = clamp(Math.round((N-1)*setProg),0,N-1);
+    if(setOn>0.02 && setProg<0.999){
+      var hp=setPoints[headIdx];
+      setHead.setAttribute("cx",hp.x); setHead.setAttribute("cy",hp.y);
+      setHeadRing.setAttribute("cx",hp.x); setHeadRing.setAttribute("cy",hp.y);
+      setHead.setAttribute("opacity",setOn);
+      setHeadRing.setAttribute("opacity",setOn*0.7);
+    } else {
+      setHead.setAttribute("opacity",0); setHeadRing.setAttribute("opacity",0);
+    }
+    // dispatch event markers (night spike idx ~31, evening curtail idx ~90)
+    var evMk = gate(phase,7.3,7.9);
+    drawDispatchMarkers(evMk, setProg);
+
+    // now-line sweep tied to setpoint draw during step7, then parks at evening curtail in step8
+    var nowFrac;
+    if(phase<7.05){ nowLineEl.setAttribute("opacity",0); }
+    else if(phase<8.0){ nowFrac=setProg; showNow(nowFrac, setOn); }
+    else { showNow(1, gateOut(phase,8.6,9.0)); }
+
+    // ================= STEP8: REVENUE count-up =================
+    var revOn = gate(phase,7.9,8.4);
+    revAnim.target = (PORT.dailyRevenueEur||4218) * clamp(gate(phase,7.95,8.7),0,1);
+
+    // ================= OUTRO ================= handled in CSS sections
+  }
+
+  // ---- single EV glyph ----
+  function drawEV(op, phase){
+    if(evGroup.childNodes.length===0){
+      // build once
+      var cx=xAt(2)+10, baseY=yP(base(2));
+      // need bar: from current SOC to target
+      var capY0=yP(0.4), capY1=yP(3.0);
+      var g=evGroup;
+      // a vertical "one car charge need" bar — placed right of the caption card
+      var x0=xAt(58);
+      var barW=54;
+      var yTop=yP(3.4), yBot=yP(0.6);
+      var track=svgEl("rect",{x:x0,y:yTop,width:barW,height:(yBot-yTop),rx:10,fill:"rgba(255,255,255,0.04)",stroke:"rgba(255,255,255,0.10)"});
+      g.appendChild(track);
+      // filled portion = arrival SOC 45.7% of the need
+      var soc=(PARAMS.initialSocPct||45.7), tgt=(PARAMS.minTargetSocPct||80);
+      var fillH=(yBot-yTop)*(soc/100);
+      var fill=svgEl("rect",{x:x0,y:yBot-fillH,width:barW,height:fillH,rx:10,fill:"url(#gUp)",class:"evfill"});
+      g.appendChild(fill);
+      // target line
+      var tgtY=yBot-(yBot-yTop)*(tgt/100);
+      var tl=svgEl("line",{x1:x0-6,y1:tgtY,x2:x0+barW+6,y2:tgtY,stroke:"#5CEB9F","stroke-width":1.4,"stroke-dasharray":"4 4"});
+      g.appendChild(tl);
+      var tlab=svgEl("text",{x:x0+barW+12,y:tgtY+4,fill:"#5CEB9F","font-size":12,"font-family":"inherit",class:"tnum"});
+      tlab.textContent="80% target"; g.appendChild(tlab);
+      var slab=svgEl("text",{x:x0+barW/2,y:yBot-fillH-10,"text-anchor":"middle",fill:"#F7F5F2","font-size":14,"font-weight":700,"font-family":"inherit",class:"tnum"});
+      slab.textContent=soc+"%"; g.appendChild(slab);
+      var clab=svgEl("text",{x:x0+barW/2,y:yBot+22,"text-anchor":"middle",fill:"rgba(247,245,242,0.5)","font-size":11,"letter-spacing":"0.08em","font-family":"inherit"});
+      clab.textContent="ONE EV · 7.4 kW"; g.appendChild(clab);
+      // plug spark
+      var spark=svgEl("circle",{cx:x0+barW/2,cy:yBot-fillH,r:4,fill:"#5CEB9F",class:"spark",filter:"url(#glow)"});
+      g.appendChild(spark);
+    }
+    // animate spark up/down a touch
+    var sp=evGroup.querySelector(".spark");
+    if(sp){ var t=(Date.now()%2000)/2000; sp.setAttribute("opacity",0.5+0.5*Math.sin(t*6.28)); }
+  }
+
+  // ---- target badge [168,184] ----
+  function drawTargetBadge(op){
+    if(op<=0.01){ gTargetBadge.setAttribute("opacity",0); return; }
+    gTargetBadge.setAttribute("opacity",op);
+    if(gTargetBadge.childNodes.length===0){
+      var i=N-1;
+      var x=xAt(i);
+      var yHi=yE(184), yLo=yE(168);
+      // bracket on the right edge of cone
+      var bx=x+6;
+      var br=svgEl("path",{d:"M"+bx+" "+yHi+" L"+(bx+10)+" "+yHi+" L"+(bx+10)+" "+yLo+" L"+bx+" "+yLo,
+        fill:"none",stroke:"#BCA0F2","stroke-width":1.6});
+      gTargetBadge.appendChild(br);
+      var lab=svgEl("text",{x:bx+16,y:(yHi+yLo)/2-6,fill:"#BCA0F2","font-size":13,"font-weight":700,"font-family":"inherit",class:"tnum"});
+      lab.textContent="[168, 184]"; gTargetBadge.appendChild(lab);
+      var lab2=svgEl("text",{x:bx+16,y:(yHi+yLo)/2+10,fill:"rgba(188,160,242,0.7)","font-size":10.5,"letter-spacing":"0.08em","font-family":"inherit"});
+      lab2.textContent="MWh @ 16:00"; gTargetBadge.appendChild(lab2);
+      // convergence glow node
+      var node=svgEl("circle",{cx:x,cy:(yHi+yLo)/2,r:6,fill:"#BCA0F2",filter:"url(#glow)",class:"tgtNode"});
+      gTargetBadge.appendChild(node);
+    }
+    var nd=gTargetBadge.querySelector(".tgtNode");
+    if(nd){ var t=(Date.now()%2400)/2400; nd.setAttribute("r",5+1.5*Math.sin(t*6.28)); }
+  }
+
+  // ---- dispatch event markers on setpoint ----
+  var NIGHT_IDX=31, EVE_IDX=90;
+  function drawDispatchMarkers(op, setProg){
+    if(op<=0.01){ nightMarker.setAttribute("opacity",0); eveMarker.setAttribute("opacity",0); return; }
+    // night marker (FCR-D up spike)
+    if(nightMarker.childNodes.length===0){
+      var x=xAt(NIGHT_IDX), y=yP(setp(NIGHT_IDX));
+      var ring=svgEl("circle",{cx:x,cy:y,r:13,fill:"none",stroke:"#5CEB9F","stroke-width":1.3,opacity:0.7});
+      var dot=svgEl("circle",{cx:x,cy:y,r:4.5,fill:"#5CEB9F",filter:"url(#glow)"});
+      nightMarker.appendChild(ring); nightMarker.appendChild(dot);
+      var box=svgEl("g",{});
+      var lx=x-138, ly=y-58;
+      var bg=svgEl("rect",{x:lx,y:ly,width:128,height:42,rx:8,fill:"rgba(13,31,23,0.92)",stroke:"rgba(92,235,159,0.4)"});
+      box.appendChild(bg);
+      var t1=svgEl("text",{x:lx+12,y:ly+18,fill:"#5CEB9F","font-size":11.5,"font-weight":700,"font-family":"inherit"});
+      t1.textContent="01:45 · FCR-D up"; box.appendChild(t1);
+      var t2=svgEl("text",{x:lx+12,y:ly+34,fill:"rgba(247,245,242,0.7)","font-size":11,"font-family":"inherit",class:"tnum"});
+      t2.textContent="setpoint → 8.8 MW"; box.appendChild(t2);
+      // connector
+      var cn=svgEl("line",{x1:lx+128,y1:ly+21,x2:x-6,y2:y-6,stroke:"rgba(92,235,159,0.4)","stroke-width":1});
+      box.appendChild(cn);
+      nightMarker.appendChild(box);
+    }
+    if(eveMarker.childNodes.length===0){
+      var x2=xAt(EVE_IDX), y2=yP(setp(EVE_IDX));
+      var ring2=svgEl("circle",{cx:x2,cy:y2,r:13,fill:"none",stroke:"#FF6B5C","stroke-width":1.3,opacity:0.7});
+      var dot2=svgEl("circle",{cx:x2,cy:y2,r:4.5,fill:"#FF6B5C",filter:"url(#glow)"});
+      eveMarker.appendChild(ring2); eveMarker.appendChild(dot2);
+      var box2=svgEl("g",{});
+      var lx2=x2-150, ly2=y2+22;
+      var bg2=svgEl("rect",{x:lx2,y:ly2,width:140,height:42,rx:8,fill:"rgba(13,31,23,0.92)",stroke:"rgba(255,107,92,0.4)"});
+      box2.appendChild(bg2);
+      var u1=svgEl("text",{x:lx2+12,y:ly2+18,fill:"#FF6B5C","font-size":11.5,"font-weight":700,"font-family":"inherit"});
+      u1.textContent="16:30 · price-spike"; box2.appendChild(u1);
+      var u2=svgEl("text",{x:lx2+12,y:ly2+34,fill:"rgba(247,245,242,0.7)","font-size":11,"font-family":"inherit",class:"tnum"});
+      u2.textContent="curtail → 0.83 MW"; box2.appendChild(u2);
+      var cn2=svgEl("line",{x1:lx2+140,y1:ly2+6,x2:x2-6,y2:y2+6,stroke:"rgba(255,107,92,0.4)","stroke-width":1});
+      box2.appendChild(cn2);
+      eveMarker.appendChild(box2);
+    }
+    // reveal markers only once setpoint has drawn past them
+    var nightVis = (setProg*(N-1) > NIGHT_IDX-2) ? op : 0;
+    var eveVis   = (setProg*(N-1) > EVE_IDX-2) ? op : 0;
+    nightMarker.setAttribute("opacity",nightVis);
+    eveMarker.setAttribute("opacity",eveVis);
+    // pulse rings
+    var t=(Date.now()%1600)/1600;
+    var rNight=nightMarker.querySelector("circle"); if(rNight){rNight.setAttribute("r",11+4*t);rNight.setAttribute("opacity",(1-t)*0.7*nightVis);}
+    var rEve=eveMarker.querySelector("circle"); if(rEve){rEve.setAttribute("r",11+4*t);rEve.setAttribute("opacity",(1-t)*0.7*eveVis);}
+  }
+
+  // ---- now-line sweep ----
+  function showNow(frac, op){
+    if(op<=0.01){ nowLineEl.setAttribute("opacity",0); return; }
+    var i=clamp(frac*(N-1),0,N-1);
+    var x=xAt(i);
+    nowLineEl.setAttribute("x1",x); nowLineEl.setAttribute("x2",x);
+    nowLineEl.setAttribute("y1",M.t); nowLineEl.setAttribute("y2",M.t+plotH());
+    nowLineEl.setAttribute("opacity",op*0.6);
+  }
+
+  // =========================================================
+  //  PARAM CARD content
+  // =========================================================
+  function fillParamCard(){
+    var rows=[
+      ["Arrival", (PARAMS.arrivalTime||"18:00")],
+      ["Departure", (PARAMS.departureTime||"16:00 (+1d)")],
+      ["Charge rate", (PARAMS.effChargeRateKW||7.4)+" kW", true],
+      ["Arrival SOC", (PARAMS.initialSocPct||45.7)+"%"],
+      ["Target SOC", (PARAMS.minTargetSocPct||80)+"–"+(PARAMS.maxTargetSocPct||87.6)+"%"],
+      ["Capacity", (PARAMS.batteryCapacityMWh||210)+" MWh", true],
+      ["Aggregated EVs", (PARAMS.aggregatedEVs||4218).toLocaleString()],
+      ["Cadence", "every "+(PARAMS.cadenceMin||15)+" min"]
+    ];
+    var host=$("paramRows"); host.innerHTML="";
+    rows.forEach(function(r){
+      var d=document.createElement("div"); d.className="prow";
+      var k=document.createElement("span"); k.className="pk"; k.textContent=r[0];
+      var v=document.createElement("span"); v.className="pv tnum"+(r[2]?" g":""); v.textContent=r[1];
+      d.appendChild(k); d.appendChild(v); host.appendChild(d);
+    });
+  }
+
+  // =========================================================
+  //  SCROLL → PHASE mapping
+  // =========================================================
+  var sections=[].slice.call(document.querySelectorAll("[data-step]"));
+  var scroller=$("scroller");
+  var rail=$("rail");
+  var railLabels=["Intro","1 · One EV","2 · Baseline","3 · Up-flex","4 · Down-flex","5 · Envelope","6 · Energy cone","7 · FCR-D","8 · Setpoint","9 · Revenue","Summary"];
+
+  // build rail dots (skip pure intro? include it as first)
+  railLabels.forEach(function(lab,i){
+    var d=document.createElement("div"); d.className="dot"; d.dataset.idx=i;
+    var tip=document.createElement("span"); tip.className="tip"; tip.textContent=lab;
+    d.appendChild(tip);
+    d.addEventListener("click",function(){
+      var target=sectionTops[i]; if(target!==undefined) window.scrollTo({top:target,behavior:"smooth"});
+    });
+    rail.appendChild(d);
+  });
+  var dots=[].slice.call(rail.children);
+
+  // compute section positions in *document* coordinates (offsetTop is relative
+  // to the nearest positioned ancestor, which broke phase/scroll alignment)
+  var sectionTops=[], sectionCenters=[];
+  function measure(){
+    var sy=window.scrollY||window.pageYOffset||0;
+    sectionTops=sections.map(function(s){return s.getBoundingClientRect().top+sy;});
+    sectionCenters=sections.map(function(s,k){return sectionTops[k]+s.offsetHeight*0.5;});
+    // layout-dependent geometry recompute
+    computeSetPoints();
+  }
+
+  // phase from scroll: intro=section0, steps map to data-step. We want phase float.
+  // We define phase = (scrollProgress through the steps). Use each step's center.
+  function currentPhase(){
+    var sc=window.scrollY||window.pageYOffset;
+    var vh=window.innerHeight;
+    // phase tracks the "active caption" with smooth interpolation between section centers
+    var centers=sectionCenters;
+    if(!centers.length) return -1;
+    var anchor=sc+vh*0.5;
+    // dataStep values: intro=-1, steps 0..8, outro=9
+    var stepVals=sections.map(function(s){return parseFloat(s.dataset.step);});
+    if(anchor<=centers[0]) return stepVals[0];
+    for(var k=0;k<centers.length-1;k++){
+      if(anchor>=centers[k] && anchor<=centers[k+1]){
+        var f=(anchor-centers[k])/(centers[k+1]-centers[k]);
+        return lerp(stepVals[k],stepVals[k+1],f);
+      }
+    }
+    return stepVals[stepVals.length-1];
+  }
+
+  function activeIndex(phase){
+    // find nearest section index by stepVal
+    var stepVals=sections.map(function(s){return parseFloat(s.dataset.step);});
+    var best=0,bd=1e9;
+    for(var i=0;i<stepVals.length;i++){var dd=Math.abs(stepVals[i]-phase);if(dd<bd){bd=dd;best=i;}}
+    return best;
+  }
+
+  // orbs parallax
+  var orb1=$("orb1"), orb2=$("orb2");
+  var REDUCED=window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ambient canvas particles (lightweight)
+  var cvs=$("ambient"), ctx=cvs.getContext("2d"), DPR=Math.min(window.devicePixelRatio||1,2);
+  var parts=[];
+  function initCanvas(){
+    cvs.width=innerWidth*DPR; cvs.height=innerHeight*DPR;
+    cvs.style.width=innerWidth+"px"; cvs.style.height=innerHeight+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    parts=[];
+    var n=REDUCED?0:Math.round(innerWidth/26);
+    for(var i=0;i<n;i++){
+      parts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+        r:Math.random()*1.6+0.4, vx:(Math.random()-0.5)*0.12, vy:-(Math.random()*0.22+0.04),
+        a:Math.random()*0.4+0.1, hue:Math.random()<0.7?"g":"l"});
+    }
+  }
+  function drawCanvas(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i]; p.x+=p.vx; p.y+=p.vy;
+      if(p.y< -10){p.y=innerHeight+10;p.x=Math.random()*innerWidth;}
+      if(p.x<-10)p.x=innerWidth+10; if(p.x>innerWidth+10)p.x=-10;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832);
+      ctx.fillStyle=(p.hue==="g"?"rgba(45,226,131,":"rgba(188,160,242,")+p.a+")";
+      ctx.fill();
+    }
+  }
+
+  // revenue count-up smoothing
+  function tickRevenue(){
+    var diff=revAnim.target-revAnim.cur;
+    if(Math.abs(diff)>0.5){ revAnim.cur+=diff*0.12; }
+    else revAnim.cur=revAnim.target;
+    var el=$("revToday");
+    if(el) el.textContent="€"+Math.round(revAnim.cur).toLocaleString();
+  }
+
+  // =========================================================
+  //  MAIN LOOP
+  // =========================================================
+  var lastPhase=-99, targetPhase=-1, smoothPhase=-1;
+  var rafRunning=false;
+  function loop(){
+    // ease the phase toward scroll target for buttery transitions
+    smoothPhase += (targetPhase - smoothPhase)*(REDUCED?1:0.16);
+    if(Math.abs(targetPhase-smoothPhase)<0.0008) smoothPhase=targetPhase;
+
+    render(smoothPhase);
+    tickRevenue();
+    drawCanvas();
+
+    // rail + parallax (cheap)
+    var ai=activeIndex(smoothPhase);
+    for(var i=0;i<dots.length;i++){
+      dots[i].classList.toggle("active", i===ai);
+      dots[i].classList.toggle("past", i<ai);
+    }
+    var sc=window.scrollY||0;
+    if(!REDUCED){
+      orb1.style.transform="translate("+(Math.sin(Date.now()/6000)*16)+"px,"+(sc*-0.04 + Math.cos(Date.now()/7000)*12)+"px)";
+      orb2.style.transform="translate("+(Math.cos(Date.now()/5500)*18)+"px,"+(sc*-0.02 + Math.sin(Date.now()/6500)*14)+"px)";
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function onScroll(){ targetPhase=currentPhase(); }
+
+  // =========================================================
+  //  HOVER READOUT — crosshair + tooltip over the live plot
+  // =========================================================
+  var stageSvg=$("stage"), hoverTip=$("hoverTip");
+  var hoverLine=svgEl("line",{stroke:"rgba(247,245,242,0.35)","stroke-width":1,"stroke-dasharray":"2 4",opacity:0});
+  gNow.appendChild(hoverLine);
+  function fmtMW(v){return v.toFixed(2)+" MW";}
+  function fmtMWh(v){return v.toFixed(1)+" MWh";}
+  function hideHover(){hoverLine.setAttribute("opacity",0);if(hoverTip)hoverTip.style.opacity=0;}
+  function onHover(e){
+    if(smoothPhase<0.7){hideHover();return;}
+    var ctm=stageSvg.getScreenCTM(); if(!ctm){hideHover();return;}
+    var pt=stageSvg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+    var v=pt.matrixTransform(ctm.inverse());
+    if(v.x<M.l-8||v.x>M.l+plotW()+8||v.y<M.t-10||v.y>M.t+plotH()+10){hideHover();return;}
+    var i=clamp(Math.round((v.x-M.l)/plotW()*(N-1)),0,N-1);
+    var x=xAt(i);
+    hoverLine.setAttribute("x1",x); hoverLine.setAttribute("x2",x);
+    hoverLine.setAttribute("y1",M.t); hoverLine.setAttribute("y2",M.t+plotH());
+    hoverLine.setAttribute("opacity",0.8);
+    var ph=smoothPhase, rows=[];
+    function row(color,label,val){rows.push('<div class="ht-row"><span><span class="swd" style="background:'+color+'"></span>'+label+'</span><span class="hv">'+val+'</span></div>');}
+    if(ph>=1.9) row("#2DE283","p<sub>max</sub> ceiling",fmtMW(pmax(i)));
+    if(ph>=6.1&&ph<7.6) row("rgba(92,235,159,0.7)","FCR-D up",fmtMW(base(i)+fcrU(i)));
+    if(ph>=7.2) row("#5CEB9F","Setpoint",fmtMW(setp(i)));
+    row("rgba(247,245,242,0.9)","Baseline",fmtMW(base(i)));
+    if(ph>=6.1&&ph<7.6) row("rgba(92,235,159,0.7)","FCR-D down",fmtMW(Math.max(0,base(i)-fcrD(i))));
+    if(ph>=2.9) row("#FF6B5C","p<sub>min</sub> floor",fmtMW(pmin(i)));
+    if(ph>=5.0&&ph<6.3){row("#BCA0F2","Energy hi",fmtMWh(ehi(i)));row("#BCA0F2","Energy plan",fmtMWh(eset(i)));row("#BCA0F2","Energy lo",fmtMWh(elo(i)));}
+    var clk=(PE[i]&&PE[i].clock)||"";
+    hoverTip.innerHTML='<div class="ht-clock">'+clk+'</div>'+rows.join("");
+    var tw=200, th=34+rows.length*19;
+    var tx=e.clientX+18, ty=e.clientY+16;
+    if(tx+tw>innerWidth-12) tx=e.clientX-tw-14;
+    if(ty+th>innerHeight-12) ty=e.clientY-th-14;
+    hoverTip.style.left=tx+"px"; hoverTip.style.top=ty+"px";
+    hoverTip.style.opacity=1;
+  }
+  stageSvg.addEventListener("pointermove",onHover);
+  stageSvg.addEventListener("pointerleave",hideHover);
+  window.addEventListener("scroll",hideHover,{passive:true});
+
+  // =========================================================
+  //  INIT
+  // =========================================================
+  function buildAll(){
+    buildAxes(); buildLabels(); computeSetPoints(); fillParamCard();
+  }
+  function resize(){
+    initCanvas(); measure(); buildAll(); onScroll();
+  }
+
+  // restart button
+  var rb=$("restartBtn"); if(rb) rb.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"});});
+
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("resize",function(){ clearTimeout(window.__rt); window.__rt=setTimeout(resize,120); });
+
+  // boot
+  buildAll(); initCanvas(); measure(); onScroll(); smoothPhase=targetPhase;
+  requestAnimationFrame(loop);
+
+  // outro count-up of annualized (one-shot when visible)
+  var oRevDay=$("oRevDay"), oRevAnn=$("oRevAnn");
+  var outroDone=false;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting && !outroDone){
+        outroDone=true;
+        countUp(oRevDay, PORT.dailyRevenueEur||4218, "€", 0);
+        countUp(oRevAnn, PORT.annualizedEur||746130, "€", 0);
+      } else if(!e.isIntersecting){ outroDone=false; }
+    });
+  },{threshold:0.4});
+  var outroSec=document.querySelector(".outro"); if(outroSec) io.observe(outroSec);
+  function countUp(el,to,pre,dec){
+    if(!el)return; var from=0, start=null, dur=1400;
+    function step(ts){ if(!start)start=ts; var t=clamp((ts-start)/dur,0,1); var e=easeOut(t);
+      el.textContent=pre+Math.round(from+(to-from)*e).toLocaleString();
+      if(t<1)requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+
+})();
+</script>
+</body>
+</html>

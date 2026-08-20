@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 6 · Foundation · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-foundation">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>ONE GOVERNED FOUNDATION</div>
+      <div class="detail-slot" id="foundDetailSlot" style="min-height:420px;">
+        <div class="detail-panel panel-card" id="foundFlow">
+          <div class="pc-h"><span>DATA FLOW</span><span>Sources → store → apps</span></div>
+          <svg id="lineageSvg" viewBox="0 0 600 320" style="width:100%;display:block;"></svg>
+        </div>
+        <div class="detail-panel panel-card" id="foundTrace">
+          <div class="pc-h"><span>TRACE ONE NUMBER</span><span></span></div>
+          <div class="trace-chain" id="traceChain"></div>
+        </div>
+        <div class="detail-panel panel-card" id="foundExpand">
+          <div class="pc-h"><span>EXPANSION PATH</span><span>Same foundation, every phase</span></div>
+          <div class="expand-strip" id="expandStrip"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="foundation" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 6</span> A pattern, not a project</div>
+      <h2>One foundation carries <span class="hll">heat</span>, batteries and industrial flex.</h2>
+      <p class="cue">So you can…</p>
+      <p>Everything you've seen — the consumer app, the trading desk, the command bridge — runs off one
+        shared, governed data foundation. I'll show how each screen resolves to the same governed data, so
+        phase two reuses this foundation instead of rebuilding it.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="foundation" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> One governed foundation, end-to-end lineage</div>
+      <h2>Three apps. One loop. <span class="hll">One truth</span>.</h2>
+      <ul class="beat-list" id="foundBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The flow in one picture: telematics, meters, prices, grid signals and weather land in one governed store; forecasts and baselines compute once; all three apps read the same conformed truth.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Trace one number end-to-end: the €312K on the P&amp;L back through settlement records to individual dispatch intervals.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The expansion path: EV demand response now; heat and residential batteries next — the same boiler from the opening story; industrial and hydro-adjacent flex after.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="foundation" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>The next 12–24 months decide who owns <span class="hl">Nordic flex</span>.</h2>
+      <p>Reusing one foundation is how you move at that speed. So our ask today: does the capacity–margin–trust
+        thesis fit how you want the Energy Company data ecosystem to evolve — and who co-sponsors Phase 1?</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"foundation", beats:3, prev:"loop-5.html", next:"v2-summary.html", num:"6", label:"Loop 6 · Foundation", nextLabel:"See the scorecard \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

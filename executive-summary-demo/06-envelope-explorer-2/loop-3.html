@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 3 · Settlement · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-settlement">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>DISPATCH-TO-SETTLEMENT</div>
+      <div class="panel-card" id="bidBookCard">
+        <div class="pc-h"><span>BID BOOK · 5 NORDIC PRODUCTS</span><span>Today</span></div>
+        <table class="mini-table" id="bidBookTable"><thead><tr><th>Product</th><th>MW</th><th>Price €/MWh</th><th>Window</th><th>Status</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel-card" id="dispatchCard">
+        <div class="pc-h"><span>DISPATCH EVENT TRACE</span><span id="dispatchId"></span></div>
+        <div id="dispatchBody"></div>
+      </div>
+      <div class="panel-card" id="pnlCard">
+        <div class="pc-h"><span>PROGRAM P&amp;L</span><span>YTD</span></div>
+        <div id="pnlBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="settlement" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 3</span> A new earnings line</div>
+      <h2>No tariff increase. No rate case. <span class="hl">No new plant</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>Flexibility revenue only survives a board meeting if every euro can be traced from market
+        commitment through dispatch to settlement. I'll walk one dispatch event from bid to bank, audited
+        at the same standard as generation revenue.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="settlement" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> Dispatch-to-settlement traceability</div>
+      <h2>Every euro, <span class="hl">traced</span> to the interval.</h2>
+      <ul class="beat-list" id="settleBeats">
+        <li data-beat="0"><span class="bn">1</span><span>Market positions: the live bid book across five Nordic balancing and wholesale products, with accepted, pending and rejected bids at their clearing prices.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>The dispatch-event log: target versus delivered megawatts, chargers dispatched, responses, opt-outs, revenue — variance sub-hourly, customer by customer, nothing hidden.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The program P&amp;L: <b>€312K</b> net savings YTD at just <b>€42</b> per customer per year — including a €42K annual lift found by rebalancing two reserve products.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="settlement" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>An EBITDA line the board — and the <span class="hl">regulator</span> — can trust.</h2>
+      <p>This margin came from market participation, not from raising a single customer's tariff — and
+        because it settles euro-by-euro against measured delivery, it's a number you can put in front of
+        the board and the regulator with confidence.</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"settlement", beats:3, prev:"loop-2.html", next:"loop-4.html", num:"3", label:"Loop 3 · Settlement", nextLabel:"Next loop \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

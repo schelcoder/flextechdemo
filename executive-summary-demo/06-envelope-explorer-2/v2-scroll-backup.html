@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Capacity, Margin, Trust · Energy Company VPP Demo v2</title>
+<style>
+  :root{
+    --green:#2DE283; --green-l:#5CEB9F; --green-d:#1FB868;
+    --ivy:#0A4F33; --ivy-d:#063521;
+    --lav:#BCA0F2; --lav-d:#8E74C9;
+    --black:#0A0F0D; --black2:#0A0A0A;
+    --surf:#0D1F17; --surf2:#10261B;
+    --off:#F7F5F2; --white:#FFFFFF;
+    --hair:rgba(255,255,255,0.08);
+    --coral:#FF6B5C; --coral-d:#F2552E;
+    --amber:#E8A33D;
+    --txt-dim:rgba(247,245,242,0.55);
+    --txt-dimmer:rgba(247,245,242,0.34);
+    --font:"Inter","Helvetica Neue","Segoe UI",system-ui,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:auto;color-scheme:dark;overflow-anchor:none;}
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--black);}
+  ::-webkit-scrollbar-thumb{background:rgba(45,226,131,0.22);border-radius:5px;border:2px solid var(--black);}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(45,226,131,0.42);}
+  body{
+    font-family:var(--font);
+    background:var(--black);
+    color:var(--off);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  /* ---------- ambient backdrop ---------- */
+  #ambient{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.5;z-index:0;pointer-events:none;will-change:transform;}
+  .orb.g{background:radial-gradient(circle,rgba(45,226,131,0.45),transparent 70%);}
+  .orb.l{background:radial-gradient(circle,rgba(188,160,242,0.40),transparent 70%);}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+    background-image:radial-gradient(rgba(255,255,255,0.9) 0.5px,transparent 0.5px);
+    background-size:3px 3px;}
+
+  /* ---------- header ---------- */
+  header{
+    position:fixed;top:0;left:0;right:0;height:62px;z-index:50;
+    display:flex;align-items:center;gap:22px;
+    padding:0 30px;
+    background:linear-gradient(180deg,rgba(10,15,13,0.96),rgba(10,15,13,0.72) 70%,transparent);
+    backdrop-filter:blur(8px);
+  }
+  .brandmark{display:flex;align-items:center;gap:11px;}
+  .logo{width:26px;height:26px;position:relative;}
+  .logo svg{display:block;}
+  .brand-txt{display:flex;flex-direction:column;line-height:1.05;}
+  .brand-txt b{font-size:13.5px;font-weight:700;letter-spacing:-0.01em;color:var(--white);}
+  .brand-txt span{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--txt-dim);}
+  .header-sep{width:1px;height:26px;background:var(--hair);}
+  .concept-name{font-size:13px;font-weight:600;letter-spacing:0.02em;color:var(--green-l);white-space:nowrap;}
+  .concept-name em{font-style:normal;color:var(--txt-dim);font-weight:500;}
+  .act-pill{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--txt-dim);padding:6px 14px;border:1px solid var(--hair);border-radius:999px;white-space:nowrap;}
+  .act-pill .n{color:var(--green-l);font-weight:700;}
+
+  /* ---------- progress rail ---------- */
+  #rail{position:fixed;left:24px;top:50%;transform:translateY(-50%);z-index:40;
+    display:flex;flex-direction:column;gap:8px;max-height:82vh;overflow:visible;}
+  .dot{width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(247,245,242,0.22);
+    background:transparent;transition:all .4s cubic-bezier(.4,0,.2,1);cursor:pointer;position:relative;flex:0 0 auto;}
+  .dot.active{background:var(--green);border-color:var(--green);box-shadow:0 0 12px rgba(45,226,131,0.7);transform:scale(1.35);}
+  .dot.past{background:rgba(45,226,131,0.4);border-color:rgba(45,226,131,0.5);}
+  .dot .tip{position:absolute;left:19px;top:50%;transform:translateY(-50%);
+    font-size:10.5px;letter-spacing:0.03em;color:var(--txt-dim);white-space:nowrap;opacity:0;
+    pointer-events:none;transition:opacity .2s;background:rgba(13,31,23,0.94);padding:3px 9px;border-radius:6px;border:1px solid var(--hair);}
+  .dot:hover .tip{opacity:1;}
+  .dot.actdiv{width:16px;height:2px;border-radius:1px;background:var(--hair);border:none;margin:3px 0;cursor:default;}
+
+  /* ---------- envelope act overlays ---------- */
+  .env-tag{position:absolute;padding:14px 18px;background:linear-gradient(160deg,rgba(13,31,23,0.92),rgba(10,15,13,0.88));
+    border:1px solid var(--hair);border-radius:14px;backdrop-filter:blur(8px);opacity:0;
+    transition:opacity .5s,transform .5s;box-shadow:0 16px 40px rgba(0,0,0,0.4);pointer-events:none;}
+  .env-tag.show{opacity:1;}
+  .env-tag .v,.env-tag .k{display:block;}
+  #envFleetCounter{top:100px;right:60px;text-align:right;transform:translateY(-6px);}
+  #envFleetCounter.show{transform:translateY(0);}
+  #envFleetCounter .v{font-size:26px;font-weight:750;color:var(--white);font-variant-numeric:tabular-nums;letter-spacing:-0.01em;}
+  #envFleetCounter .k{font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt-dim);margin-top:2px;}
+  #envBoilerLabel{text-align:left;transform:translateX(-6px);width:200px;}
+  #envBoilerLabel.show{transform:translateX(0);}
+  #envBoilerLabel .v{font-size:16px;font-weight:700;color:var(--lav);}
+  #envBoilerLabel .k{font-size:10.5px;color:var(--txt-dim);margin-top:4px;line-height:1.45;}
+  #envRevMeter{left:53%;top:50%;transform:translateY(-46%);width:300px;}
+  #envRevMeter.show{transform:translateY(-50%);}
+  #envRevMeter .rk0{font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+  #envRevMeter .rv{font-size:30px;font-weight:800;color:var(--green-l);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
+  #envRevMeter .rk{font-size:11px;letter-spacing:0.05em;color:var(--txt-dim);margin-top:4px;}
+  #envRevMeter .rtag{display:inline-block;margin-top:12px;padding:3px 10px;border-radius:999px;background:rgba(232,163,61,0.15);
+    color:var(--amber);font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;}
+  #envRevMeter .rcheck{margin-top:13px;font-size:12px;color:var(--txt-dim);display:flex;align-items:center;gap:8px;}
+  #envRevMeter .rcheck b{color:var(--green-l);font-weight:700;}
+
+  /* ---------- layout ---------- */
+  .scroller{position:relative;z-index:10;pointer-events:none;}
+  .stage-wrap{position:fixed;inset:0;height:100vh;width:100%;z-index:5;}
+  .act-panel{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .55s ease;}
+  .act-panel.active{opacity:1;}
+  #stage{position:absolute;inset:0;}
+
+  /* caption column */
+  .steps{position:relative;z-index:20;width:42%;max-width:560px;margin-left:6.5%;pointer-events:none;}
+  .step{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 4px;}
+  .step.show-step{min-height:230vh;}
+  .step .card{
+    background:linear-gradient(165deg,rgba(13,31,23,0.80),rgba(10,15,13,0.74));
+    border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:28px 32px 30px;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 24px 70px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05);}
+  .step .kicker{font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--green);
+    margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .step .kicker.role-show{color:var(--lav);}
+  .step .kicker .num{font-variant-numeric:tabular-nums;color:var(--txt-dimmer);}
+  .step .kicker .line{flex:0 0 26px;height:1px;background:linear-gradient(90deg,var(--green),transparent);}
+  .step .kicker.role-show .line{background:linear-gradient(90deg,var(--lav),transparent);}
+  .step h2{font-size:27px;font-weight:700;letter-spacing:-0.02em;line-height:1.14;margin-bottom:13px;color:var(--white);}
+  .step h2 .hl{color:var(--green-l);}
+  .step h2 .hlc{color:var(--coral);}
+  .step h2 .hll{color:var(--lav);}
+  .step p{font-size:14.5px;line-height:1.58;color:rgba(247,245,242,0.74);max-width:440px;font-weight:400;}
+  .step p b{color:var(--off);font-weight:600;}
+  .step p.cue{font-size:11.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--txt-dimmer);margin-bottom:6px;}
+  .step .fig{font-variant-numeric:tabular-nums;font-weight:650;color:var(--green-l);}
+  .step .figc{font-variant-numeric:tabular-nums;font-weight:650;color:var(--coral);}
+  .step .figl{font-variant-numeric:tabular-nums;font-weight:650;color:var(--lav);}
+
+  /* numbered beat list inside "show" cards */
+  .beat-list{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .beat-list li{display:flex;gap:12px;align-items:flex-start;padding:9px 11px;border-radius:10px;
+    border:1px solid transparent;font-size:12.8px;line-height:1.45;color:var(--txt-dim);transition:all .35s;}
+  .beat-list li .bn{flex:0 0 20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);
+    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--txt-dim);margin-top:1px;}
+  .beat-list li.active{background:rgba(188,160,242,0.08);border-color:rgba(188,160,242,0.28);color:var(--off);}
+  .beat-list li.active .bn{background:var(--lav);border-color:var(--lav);color:#1a1030;}
+  .beat-list li.done{color:rgba(247,245,242,0.5);}
+  .beat-list li.done .bn{background:rgba(45,226,131,0.22);border-color:rgba(45,226,131,0.4);color:var(--green-l);}
+
+  /* intro / outro full panels */
+  .intro,.outro{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;text-align:center;position:relative;z-index:20;padding:0 40px;}
+  .intro .tag{font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--green);margin-bottom:26px;}
+  .intro h1{font-size:64px;font-weight:800;letter-spacing:-0.03em;line-height:1.04;color:var(--white);
+    margin-bottom:20px;}
+  .intro h1 .grad{background:linear-gradient(100deg,var(--green) 8%,var(--green-l) 45%,var(--lav) 96%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .intro .sub{font-size:16.5px;color:rgba(247,245,242,0.72);max-width:660px;line-height:1.55;margin-bottom:18px;}
+  .intro .meta{display:flex;gap:22px;font-size:11.5px;color:var(--txt-dimmer);letter-spacing:0.03em;margin-bottom:8px;flex-wrap:wrap;justify-content:center;}
+  .intro .meta b{color:var(--txt-dim);font-weight:600;}
+  .scroll-cue{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--txt-dim);font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;}
+  .scroll-cue .mouse{width:20px;height:31px;border:1.6px solid rgba(247,245,242,0.35);border-radius:11px;position:relative;}
+  .scroll-cue .mouse i{position:absolute;left:50%;top:6px;width:3px;height:6px;border-radius:2px;background:var(--green-l);transform:translateX(-50%);
+    animation:wheel 1.8s ease-in-out infinite;}
+  @keyframes wheel{0%{opacity:0;transform:translate(-50%,0);}30%{opacity:1;}70%{opacity:1;transform:translate(-50%,9px);}100%{opacity:0;transform:translate(-50%,9px);}}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+  /* outro hero summary card */
+  .hero-card{width:min(980px,92vw);background:linear-gradient(155deg,rgba(13,31,23,0.92),rgba(10,15,13,0.92));
+    border:1px solid var(--hair);border-radius:22px;padding:40px 46px;backdrop-filter:blur(10px);
+    box-shadow:0 30px 90px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.05);}
+  .hero-card .eyebrow{font-size:11px;letter-spacing:0.26em;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+  .hero-card h2{font-size:36px;font-weight:800;letter-spacing:-0.025em;color:var(--white);margin-bottom:6px;}
+  .hero-card .lede{font-size:14.5px;color:rgba(247,245,242,0.66);max-width:640px;line-height:1.55;margin:0 auto 26px;}
+  .hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hair);border-radius:14px;overflow:hidden;border:1px solid var(--hair);}
+  .hero-cell{background:rgba(10,15,13,0.7);padding:20px 20px;display:flex;flex-direction:column;gap:5px;text-align:left;}
+  .hero-cell .hlab{font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:2px;}
+  .hero-cell .hv{font-size:22px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1.15;}
+  .hero-cell .hv.g{color:var(--green-l);}
+  .hero-cell .hv.l{color:var(--lav);}
+  .hero-cell .hv.w{color:var(--white);}
+  .hero-cell .hk{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--txt-dimmer);margin-top:6px;}
+  .hero-cell .hs{font-size:11px;color:var(--txt-dim);margin-top:1px;}
+  .ask-list{text-align:left;margin-top:24px;display:flex;flex-direction:column;gap:9px;}
+  .ask-list li{display:flex;gap:10px;font-size:13px;color:rgba(247,245,242,0.82);align-items:flex-start;}
+  .ask-list li .ai{flex:0 0 20px;height:20px;border-radius:50%;background:rgba(45,226,131,0.16);color:var(--green-l);
+    display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;margin-top:1px;}
+  .restart{margin-top:26px;background:transparent;border:1px solid var(--hair);color:var(--off);
+    padding:11px 22px;border-radius:999px;font-family:var(--font);font-size:12.5px;letter-spacing:0.05em;cursor:pointer;
+    transition:all .3s;pointer-events:auto;}
+  .restart:hover{border-color:var(--green);color:var(--green-l);background:rgba(45,226,131,0.06);}
+
+  /* ---------- dashboard component kit (acts 2-6) ---------- */
+  .dash{position:absolute;right:5.5%;top:112px;bottom:70px;width:min(46%,660px);display:flex;flex-direction:column;gap:16px;}
+  .dash-head{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--txt-dim);display:flex;align-items:center;gap:9px;}
+  .dash-head .blip{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2.4s ease-in-out infinite;}
+  .panel-card{background:linear-gradient(160deg,rgba(13,31,23,0.88),rgba(10,15,13,0.82));border:1px solid var(--hair);
+    border-radius:18px;padding:20px 22px;box-shadow:0 20px 50px rgba(0,0,0,0.42);transition:opacity .4s,transform .4s;}
+  .panel-card.dim{opacity:0.38;transform:scale(0.985);}
+  .panel-card .pc-h{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--txt-dim);margin-bottom:14px;display:flex;justify-content:space-between;}
+
+  .kpi-strip{display:flex;gap:12px;}
+  .kpi-tile{flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--hair);border-radius:14px;padding:14px 16px;}
+  .kpi-tile .kv{font-size:24px;font-weight:750;font-variant-numeric:tabular-nums;color:var(--white);letter-spacing:-0.02em;}
+  .kpi-tile .kv.g{color:var(--green-l);} .kpi-tile .kv.l{color:var(--lav);} .kpi-tile .kv.c{color:var(--coral);}
+  .kpi-tile .kk{font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--txt-dim);margin-top:4px;}
+  .kpi-tile .ks{font-size:10.5px;color:var(--txt-dimmer);margin-top:1px;}
+
+  .bar-track{height:9px;border-radius:5px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative;}
+  .bar-fill{height:100%;border-radius:5px;transition:width .5s ease;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;}
+  .bar-row .bl{width:96px;font-size:11px;color:var(--txt-dim);flex:0 0 auto;white-space:nowrap;}
+  .bar-row .bv{width:56px;text-align:right;font-size:11.5px;color:var(--off);font-variant-numeric:tabular-nums;flex:0 0 auto;}
+
+  .status-chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:9.5px;
+    font-weight:700;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
+  .status-chip.accepted{background:rgba(45,226,131,0.15);color:var(--green-l);}
+  .status-chip.pending{background:rgba(232,163,61,0.17);color:var(--amber);}
+  .status-chip.rejected{background:rgba(255,107,92,0.15);color:var(--coral);}
+
+  .mini-table{width:100%;border-collapse:collapse;font-size:11.8px;}
+  .mini-table th{text-align:left;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--txt-dimmer);
+    padding:5px 8px;border-bottom:1px solid var(--hair);font-weight:600;}
+  .mini-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.045);color:var(--off);font-variant-numeric:tabular-nums;}
+  .mini-table tr:last-child td{border-bottom:none;}
+
+  .inbox-item{display:flex;gap:11px;padding:11px 13px;border-radius:12px;border:1px solid var(--hair);
+    background:rgba(255,255,255,0.02);margin-bottom:8px;}
+  .inbox-item .idot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:0 0 auto;}
+  .inbox-item.normal .idot{background:var(--green-l);}
+  .inbox-item.warn .idot{background:var(--amber);}
+  .inbox-item b{font-size:12.5px;color:var(--white);display:block;}
+  .inbox-item p{font-size:11px;color:var(--txt-dim);margin-top:2px;}
+
+  .detail-slot{position:relative;flex:1;min-height:260px;}
+  .detail-panel{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .4s ease;}
+  .detail-panel.active{opacity:1;}
+
+  .whatif-row{display:flex;justify-content:space-between;font-size:12px;color:var(--txt-dim);padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.045);}
+  .whatif-row:last-child{border-bottom:none;}
+  .whatif-row b{color:var(--off);font-variant-numeric:tabular-nums;}
+  .msg-preview{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(188,160,242,0.07);
+    border:1px solid rgba(188,160,242,0.22);font-size:11.8px;color:rgba(247,245,242,0.78);line-height:1.5;font-style:italic;}
+
+  .audit-row{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.3px;}
+  .audit-hash{color:var(--txt-dimmer);}
+
+  .phone{width:208px;border:1px solid var(--hair);border-radius:26px;padding:16px 14px;
+    background:linear-gradient(165deg,rgba(13,31,23,0.94),rgba(6,10,8,0.94));box-shadow:0 24px 60px rgba(0,0,0,0.5);flex:0 0 auto;}
+  .phone .ph-head{font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--txt-dim);text-align:center;margin-bottom:10px;}
+  .phone .ph-price{font-size:11px;color:var(--txt-dim);}
+
+  .lever-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.045);}
+  .lever-row:last-child{border-bottom:none;}
+  .lever-row .lb{flex:0 0 18px;height:18px;border-radius:50%;background:rgba(45,226,131,0.16);color:var(--green-l);
+    display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px;}
+  .lever-row b{font-size:12.5px;color:var(--white);display:block;}
+  .lever-row p{font-size:11px;color:var(--txt-dim);margin-top:2px;line-height:1.4;}
+
+  .expand-strip{display:flex;gap:0;}
+  .expand-stop{flex:1;padding:14px 16px 4px;border-top:3px solid rgba(255,255,255,0.14);position:relative;opacity:0.5;transition:opacity .4s;}
+  .expand-stop.on{opacity:1;}
+  .expand-stop.live{border-top-color:var(--green);}
+  .expand-stop.next{border-top-color:var(--lav);}
+  .expand-stop.later{border-top-color:rgba(255,255,255,0.3);}
+  .expand-stop .ep{font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--txt-dimmer);}
+  .expand-stop .el{font-size:12.5px;font-weight:700;color:var(--white);margin-top:3px;}
+  .expand-stop .ed{font-size:10.5px;color:var(--txt-dim);margin-top:3px;line-height:1.4;}
+
+  .trace-chain{display:flex;flex-direction:column;gap:0;}
+  .trace-node{padding:11px 14px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,0.02);
+    font-size:12px;color:var(--off);opacity:0.4;transition:all .4s;}
+  .trace-node.on{opacity:1;border-color:rgba(188,160,242,0.35);background:rgba(188,160,242,0.06);}
+  .trace-arrow{text-align:center;color:var(--txt-dimmer);font-size:13px;padding:2px 0;}
+
+  @media (max-width:1240px){
+    .steps{width:46%;margin-left:5.5%;}
+    .step h2{font-size:24px;}
+    .dash{width:48%;right:4%;}
+    .intro h1{font-size:50px;}
+  }
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;}
+    .steps{width:60%;}
+    .intro h1{font-size:40px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .scroll-cue .mouse i,.dash-head .blip{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-envelope">
+    <svg id="stage" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-label="Rescaled Power Envelope stage">
+      <defs>
+        <linearGradient id="gUp" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2DE283" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#2DE283" stop-opacity="0.06"/>
+        </linearGradient>
+        <linearGradient id="gDown" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF6B5C" stop-opacity="0.10"/>
+          <stop offset="100%" stop-color="#FF6B5C" stop-opacity="0.46"/>
+        </linearGradient>
+        <linearGradient id="gBoiler" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#BCA0F2" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#BCA0F2" stop-opacity="0.08"/>
+        </linearGradient>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <clipPath id="plotClip"><rect x="0" y="0" width="1440" height="900"/></clipPath>
+      </defs>
+      <g id="gAxes"></g>
+      <g clip-path="url(#plotClip)">
+        <g id="gBoilerBand"></g>
+        <g id="gUpBand"></g>
+        <g id="gDownBand"></g>
+        <g id="gBaseline"></g>
+        <g id="gEvGlyph"></g>
+      </g>
+      <g id="gLabels"></g>
+    </svg>
+    <div class="env-tag" id="envFleetCounter"><span class="v" id="envFleetCounterV">0</span><span class="k">Enrolled EVs · hypothesis</span></div>
+    <div class="env-tag" id="envBoilerLabel"><span class="v">+20–30 MW</span><span class="k">One district-heating boiler backing down — firm, dispatchable headroom</span></div>
+    <div class="env-tag" id="envRevMeter">
+      <div class="rk0">Combined portfolio · annualized</div>
+      <div class="rv" id="envRevMeterV">€0M</div>
+      <div class="rk">Hypothesis range · re-base in Phase 1</div>
+      <span class="rtag">Hypothesis</span>
+      <div class="rcheck"><b>✓</b> Every customer still charged by departure</div>
+    </div>
+  </div>
+
+  <div class="act-panel" id="panel-trading">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>LIVE DESK VIEW · TODAY'S FLEET</div>
+      <div class="kpi-strip" id="tradeKpis"></div>
+      <div class="panel-card" id="tradeFleetCard">
+        <div class="pc-h"><span>FLEET CONNECTION</span><span id="tradeFleetSub"></span></div>
+        <div id="tradeFleetBars"></div>
+        <div id="tradeSoc" style="margin-top:14px;"></div>
+      </div>
+      <div class="panel-card" id="tradeForecastCard">
+        <div class="pc-h"><span>48H FLEXIBILITY FORECAST</span><span id="tradeForecastSub"></span></div>
+        <svg id="forecastSvg" viewBox="0 0 600 170" style="width:100%;display:block;"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="act-panel" id="panel-settlement">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>DISPATCH-TO-SETTLEMENT</div>
+      <div class="panel-card" id="bidBookCard">
+        <div class="pc-h"><span>BID BOOK · 5 NORDIC PRODUCTS</span><span>Today</span></div>
+        <table class="mini-table" id="bidBookTable"><thead><tr><th>Product</th><th>MW</th><th>Price €/MWh</th><th>Window</th><th>Status</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="panel-card" id="dispatchCard">
+        <div class="pc-h"><span>DISPATCH EVENT TRACE</span><span id="dispatchId"></span></div>
+        <div id="dispatchBody"></div>
+      </div>
+      <div class="panel-card" id="pnlCard">
+        <div class="pc-h"><span>PROGRAM P&amp;L</span><span>YTD</span></div>
+        <div id="pnlBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="act-panel" id="panel-customer">
+    <div class="dash" style="flex-direction:row;align-items:flex-start;gap:22px;">
+      <div style="display:flex;flex-direction:column;gap:16px;flex:0 0 auto;">
+        <div class="dash-head"><span class="blip"></span>CONSUMER APP</div>
+        <div class="phone" id="phonePrice">
+          <div class="ph-head">Tomorrow's price</div>
+          <svg id="priceSvg" viewBox="0 0 190 90" style="width:100%;display:block;"></svg>
+        </div>
+        <div class="phone" id="phoneSession">
+          <div class="ph-head">Tonight's schedule</div>
+          <div id="sessionBody" style="font-size:11.5px;"></div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="panel-card" id="leverCard">
+          <div class="pc-h"><span>TRUST LEVERS</span><span></span></div>
+          <div id="leverBody"></div>
+        </div>
+        <div class="kpi-strip" id="customerKpis"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="act-panel" id="panel-governance">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>COMMAND BRIDGE</div>
+      <div class="kpi-strip" id="govKpis"></div>
+      <div class="detail-slot" id="govDetailSlot">
+        <div class="detail-panel panel-card" id="govInbox">
+          <div class="pc-h"><span>ACTION INBOX</span><span></span></div>
+          <div id="govInboxBody"></div>
+        </div>
+        <div class="detail-panel panel-card" id="govWhatIf">
+          <div class="pc-h"><span id="whatIfTitle"></span><span id="whatIfWindow"></span></div>
+          <div id="govWhatIfBody"></div>
+        </div>
+        <div class="detail-panel panel-card" id="govAudit">
+          <div class="pc-h"><span>AUDIT TRAIL · HASH-CHAINED</span><span>7-yr retention</span></div>
+          <table class="mini-table audit-row" id="auditTable"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Reason</th><th>Hash</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="act-panel" id="panel-foundation">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>ONE GOVERNED FOUNDATION</div>
+      <div class="detail-slot" id="foundDetailSlot" style="min-height:420px;">
+        <div class="detail-panel panel-card" id="foundFlow">
+          <div class="pc-h"><span>DATA FLOW</span><span>Sources → store → apps</span></div>
+          <svg id="lineageSvg" viewBox="0 0 600 320" style="width:100%;display:block;"></svg>
+        </div>
+        <div class="detail-panel panel-card" id="foundTrace">
+          <div class="pc-h"><span>TRACE ONE NUMBER</span><span></span></div>
+          <div class="trace-chain" id="traceChain"></div>
+        </div>
+        <div class="detail-panel panel-card" id="foundExpand">
+          <div class="pc-h"><span>EXPANSION PATH</span><span>Same foundation, every phase</span></div>
+          <div class="expand-strip" id="expandStrip"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller" id="scroller">
+
+  <section class="intro" data-act="intro" data-role="intro">
+    <div class="tag">Demo Plan · V2</div>
+    <h1>Capacity. Margin.<br><span class="grad">Trust.</span></h1>
+    <p class="sub">Flexibility as Energy Company's next asset class. Six loops, one Nordic power plant —
+      from a single EV charging tonight to a governed foundation that carries heat, batteries and
+      industrial flex. Scroll to run the whole demo.</p>
+    <div class="meta">
+      <span><b>Demo date</b> · 2026-08-11</span>
+      <span><b>Solution lead</b> · Alex Morgan</span>
+    </div>
+    <div class="scroll-cue"><div class="mouse"><i></i></div>Scroll</div>
+  </section>
+
+  <!-- ================= LOOP 1 — ENVELOPE ================= -->
+  <div class="steps">
+
+  <section class="step" data-act="envelope" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 1</span> An ordinary Tuesday</div>
+      <h2>100,000 cars and one boiler become your <span class="hl">next power plant</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>The Nordics have record generation capacity and record volatility. Transmission is delayed,
+        battery capex keeps climbing, and the one lever that scales with renewables is the flexibility
+        already sitting on your customers' side of the meter. I'll open with what that looks like as
+        <b>one orchestrated asset</b> — so you can judge the size of the prize before we prove the
+        machinery behind it.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="envelope" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> The aggregated flexibility envelope</div>
+      <h2>From <span class="hl">one EV</span> to a <span class="hll">portfolio-scale</span> asset.</h2>
+      <ul class="beat-list" id="envBeats">
+        <li data-beat="0"><span class="bn">1</span><span>One EV plugged in for the night — the small, familiar act of charging. Everything that follows is just this, multiplied and orchestrated.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Scroll: the fleet scales to <b>100,000 enrolled EVs</b> and the flexibility band fans out to roughly <b>200 MW</b> — on a usual weather pattern, no storm, no cold snap. This is an ordinary day.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>A district-heating electric boiler backs down inside the same envelope — one industrial asset adding <b>20–30 MW</b> of firm, dispatchable headroom. One boiler moves like thousands of cars, and it never drives away.</span></li>
+        <li data-beat="3"><span class="bn">4</span><span>The revenue counter lands on the combined portfolio — stated as a <b>hypothesis range</b> — with every customer still charged by departure time.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="envelope" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>A capacity line that grows <span class="hl">with</span> renewables, not against them.</h2>
+      <p>Every orchestrated megawatt is a megawatt of peaker capacity, grid reinforcement or curtailment
+        you do not have to buy — a near-zero-marginal-cost capacity line. The rest of this session proves
+        it is running machinery, not a concept video.</p>
+    </div>
+  </section>
+
+  <!-- ================= LOOP 2 — TRADING DESK ================= -->
+  <section class="step" data-act="trading" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 2</span> The bankable number</div>
+      <h2>Turn 100,000 customers into <span class="hl">one number</span> your desk can sell.</h2>
+      <p class="cue">So you can…</p>
+      <p>A portfolio of small flexible loads is only bankable if the desk knows, at any moment, how many
+        megawatts it can deliver now and an hour from now — and with what confidence. I'll show today's
+        live desk view of the <b>4,218-vehicle</b> fleet rolled up into exactly that number.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="trading" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> Portfolio forecast with confidence bands</div>
+      <h2>Retail assets, <span class="hl">market-grade confidence</span>.</h2>
+      <ul class="beat-list" id="tradeBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The trading dashboard: <b>8.4 MW</b> available — 5.2 committed, 3.2 uncommitted — refreshed continuously, no overnight batch, no analyst middleware.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>The fleet view: <b>4,218 enrolled</b>, 3,247 connected right now, the state-of-charge distribution and the 17:00–19:00 plug-in wave.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The 48-hour flexibility forecast: confidence bands plotted against committed megawatts at 15-minute resolution — bid only what we're confident of, which is why delivery success runs 94–96%.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="trading" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>Confidence bands make retail assets <span class="hl">investable</span>.</h2>
+      <p>Confidence bands are what turn customers into capacity a transmission operator will pay for — you
+        can declare firm megawatts with retail assets behind them. That credibility, not the megawatts
+        alone, is what makes the 200,000-customer path investable.</p>
+    </div>
+  </section>
+
+  <!-- ================= LOOP 3 — DISPATCH TO SETTLEMENT ================= -->
+  <section class="step" data-act="settlement" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 3</span> A new earnings line</div>
+      <h2>No tariff increase. No rate case. <span class="hl">No new plant</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>Flexibility revenue only survives a board meeting if every euro can be traced from market
+        commitment through dispatch to settlement. I'll walk one dispatch event from bid to bank, audited
+        at the same standard as generation revenue.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="settlement" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> Dispatch-to-settlement traceability</div>
+      <h2>Every euro, <span class="hl">traced</span> to the interval.</h2>
+      <ul class="beat-list" id="settleBeats">
+        <li data-beat="0"><span class="bn">1</span><span>Market positions: the live bid book across five Nordic balancing and wholesale products, with accepted, pending and rejected bids at their clearing prices.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>The dispatch-event log: target versus delivered megawatts, chargers dispatched, responses, opt-outs, revenue — variance sub-hourly, customer by customer, nothing hidden.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The program P&amp;L: <b>€312K</b> net savings YTD at just <b>€42</b> per customer per year — including a €42K annual lift found by rebalancing two reserve products.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="settlement" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>An EBITDA line the board — and the <span class="hl">regulator</span> — can trust.</h2>
+      <p>This margin came from market participation, not from raising a single customer's tariff — and
+        because it settles euro-by-euro against measured delivery, it's a number you can put in front of
+        the board and the regulator with confidence.</p>
+    </div>
+  </section>
+
+  <!-- ================= LOOP 4 — CUSTOMER GUARANTEE ================= -->
+  <section class="step" data-act="customer" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 4</span> The social license</div>
+      <h2><span class="hlc">0.4% opt-out</span>: the trust that lets the program scale.</h2>
+      <p class="cue">So you can…</p>
+      <p>Every dispatch is a moment where a household either experiences value or feels coerced. I'll show
+        exactly what your customer sees and the guarantees that protect them — so you can judge whether
+        this earns the trust required to grow from 4,000 cars to 200,000.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="customer" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> Optimized charging, hard personal limits</div>
+      <h2>Customers keep <span class="hl">control</span>. That's why they stay.</h2>
+      <ul class="beat-list" id="custBeats">
+        <li data-beat="0"><span class="bn">1</span><span>Tomorrow's price curve: the <b>€350/MWh</b> evening spike against roughly <b>€11</b> overnight — the customer never has to understand this chart.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>One night's optimized session: charging shifted overnight, <b>€2.12</b> saved, and the car guaranteed at departure charge by <b>07:30</b>.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The trust levers: minimum-charge guarantee, blackout windows, a one-tap override — alongside the truth: 4,218 enrolled, <b>0.4%</b> opt-out, €312K returned to households.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="customer" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>The scarce asset in this market is <span class="hl">trust</span>, not technology.</h2>
+      <p>A 0.4% opt-out rate is proof the social license is holding. Whoever earns household trust first
+        gets the 200,000-customer flexibility base; whoever loses it reads about themselves in the press.</p>
+    </div>
+  </section>
+
+  <!-- ================= LOOP 5 — GOVERNANCE ================= -->
+  <section class="step" data-act="governance" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 5</span> Run in minutes, defend for seven years</div>
+      <h2>Growth without growing the <span class="hl">governance risk</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>Scaling multiplies the ways this can go wrong — over-dispatching loyal customers, missing a
+        vulnerable household, an unexplainable settlement. I'll show the program team's command view,
+        where every risk arrives as a decision with its consequences modelled first.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="governance" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> A decision inbox with modelled what-ifs</div>
+      <h2>Every action, a decision — <span class="hl">not</span> a dashboard.</h2>
+      <ul class="beat-list" id="govBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The command bridge: live program KPIs and an action inbox — enrollment approvals, a fairness flag, a settlement dispute.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Open the pre-positioning decision for a hot Friday: available flexibility rising from 6.2 to 11.4 MW, the revenue lift, the modelled opt-out cost, and the exact customer message that would be sent.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The audit trail: every action recorded with actor, reason and hash-chained entries retained for seven years; vulnerable-customer protections at 100% compliance.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="governance" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>Governance here is not a brake — it's what makes <span class="hl">scale safe</span>.</h2>
+      <p>Fairness and auditability are what let you say yes to growth: the program moves at market speed
+        while every decision stays explainable to a regulator, a journalist, or your own board.</p>
+    </div>
+  </section>
+
+  <!-- ================= LOOP 6 — FOUNDATION ================= -->
+  <section class="step" data-act="foundation" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 6</span> A pattern, not a project</div>
+      <h2>One foundation carries <span class="hll">heat</span>, batteries and industrial flex.</h2>
+      <p class="cue">So you can…</p>
+      <p>Everything you've seen — the consumer app, the trading desk, the command bridge — runs off one
+        shared, governed data foundation. I'll show how each screen resolves to the same governed data, so
+        phase two reuses this foundation instead of rebuilding it.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="foundation" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> One governed foundation, end-to-end lineage</div>
+      <h2>Three apps. One loop. <span class="hll">One truth</span>.</h2>
+      <ul class="beat-list" id="foundBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The flow in one picture: telematics, meters, prices, grid signals and weather land in one governed store; forecasts and baselines compute once; all three apps read the same conformed truth.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Trace one number end-to-end: the €312K on the P&amp;L back through settlement records to individual dispatch intervals.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The expansion path: EV demand response now; heat and residential batteries next — the same boiler from the opening story; industrial and hydro-adjacent flex after.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="foundation" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>The next 12–24 months decide who owns <span class="hl">Nordic flex</span>.</h2>
+      <p>Reusing one foundation is how you move at that speed. So our ask today: does the capacity–margin–trust
+        thesis fit how you want the Energy Company data ecosystem to evolve — and who co-sponsors Phase 1?</p>
+    </div>
+  </section>
+
+  </div><!-- /.steps -->
+
+  <section class="outro" data-act="outro" data-role="outro">
+    <div class="hero-card">
+      <div class="eyebrow">The Capacity–Margin–Trust Scorecard</div>
+      <h2>Six loops. One flexibility program.</h2>
+      <p class="lede">A single tradable abstraction — bounded power, traceable settlement, and a
+        customer promise that holds — turns parked EVs, boilers and batteries into the Nordics'
+        fastest balancing asset.</p>
+      <div class="hero-grid">
+        <div class="hero-cell">
+          <span class="hlab">Capacity</span>
+          <span class="hv g">8.4 MW</span><span class="hk">Live today · 4,218 EVs</span>
+          <span class="hs">Hypothesis at scale: ≈200 MW + boiler</span>
+        </div>
+        <div class="hero-cell">
+          <span class="hlab">Margin</span>
+          <span class="hv w">€312K</span><span class="hk">Net savings YTD · €42/customer</span>
+          <span class="hs">Hypothesis: €18M–€57M/yr · 185% IRR</span>
+        </div>
+        <div class="hero-cell">
+          <span class="hlab">Trust</span>
+          <span class="hv l">0.4%</span><span class="hk">Opt-out · €312K returned</span>
+          <span class="hs">100% vulnerable-customer compliance</span>
+        </div>
+      </div>
+      <ul class="ask-list">
+        <li><span class="ai">1</span>Confirm the capacity–margin–trust scorecard as the board reporting frame</li>
+        <li><span class="ai">2</span>Name the first Energy Company data sources to wire for a production Phase 1</li>
+        <li><span class="ai">3</span>Name the IT and business co-sponsors for the EVP conversation — this quarter</li>
+      </ul>
+      <button class="restart" id="restartBtn">↑ Replay the demo</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var V = (window.VPP)||{}, V2 = (window.VPP2)||{};
+  function arr(x){return Array.isArray(x)?x:[];}
+  var PE = arr(V.powerEnvelope);
+  var N = Math.max(PE.length,1);
+  function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function easeOut(t){t=clamp(t,0,1);return 1-Math.pow(1-t,3);}
+  function nf(v){return (isFinite(v)?v:0).toFixed(2);}
+  function fmtEur(v){return "€"+Math.round(v).toLocaleString();}
+  function fmtEurM(v){return "€"+(v/1e6).toFixed(0)+"M";}
+  var $=function(id){return document.getElementById(id);};
+  function svgEl(tag,attrs){
+    var e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+    if(attrs)for(var k in attrs){e.setAttribute(k,attrs[k]);}
+    return e;
+  }
+  function el(tag,cls,html){var e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e;}
+
+  // =========================================================
+  //  SCROLL ENGINE — active section (by nearest center) + local progress within it
+  // =========================================================
+  var sections=[].slice.call(document.querySelectorAll("[data-act]"));
+  var scroller=$("scroller"), rail=$("rail");
+  var REDUCED = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var ACT_LABELS={intro:"Intro",envelope:"Loop 1 · Envelope",trading:"Loop 2 · Trading desk",
+    settlement:"Loop 3 · Settlement",customer:"Loop 4 · Customer",governance:"Loop 5 · Governance",
+    foundation:"Loop 6 · Foundation",outro:"Summary"};
+  var ROLE_LABELS={"intro":"","tell-setup":"Tell","show":"Show","tell-sowhat":"So what","outro":""};
+
+  sections.forEach(function(s,i){
+    var d=el("div","dot"); d.dataset.idx=i;
+    var lab=ACT_LABELS[s.dataset.act]+(ROLE_LABELS[s.dataset.role]?" · "+ROLE_LABELS[s.dataset.role]:"");
+    var tip=el("span","tip",lab); d.appendChild(tip);
+    d.addEventListener("click",function(){
+      var r=s.getBoundingClientRect(); window.scrollTo({top:window.scrollY+r.top+2,behavior:"smooth"});
+    });
+    rail.appendChild(d);
+  });
+  var dots=[].slice.call(rail.children);
+
+  var activeIdx=-1, activeAct="intro";
+  var rawLocalProgress=0, smoothLocalProgress=0;
+
+  function computeActive(){
+    var vh=innerHeight, center=vh*0.5;
+    var best=0,bd=1e9,bestRect=null;
+    for(var i=0;i<sections.length;i++){
+      var r=sections[i].getBoundingClientRect();
+      var mid=r.top+r.height/2;
+      var d=Math.abs(mid-center);
+      if(d<bd){bd=d;best=i;bestRect=r;}
+    }
+    activeIdx=best;
+    activeAct=sections[best].dataset.act;
+    var role=sections[best].dataset.role;
+    if(role==="show" && bestRect){
+      rawLocalProgress=clamp((center-bestRect.top)/bestRect.height,0,1);
+    } else if(role==="tell-sowhat" || role==="outro"){
+      rawLocalProgress=1;
+    } else {
+      rawLocalProgress=0;
+    }
+  }
+
+  function onScroll(){ computeActive(); }
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("resize",function(){ clearTimeout(window.__rt); window.__rt=setTimeout(function(){ computeActive(); },120); });
+
+  // =========================================================
+  //  ambient canvas + orbs (visual parity with v1)
+  // =========================================================
+  var cvs=$("ambient"), ctx=cvs.getContext("2d"), DPR=Math.min(window.devicePixelRatio||1,2);
+  var parts=[];
+  function initCanvas(){
+    cvs.width=innerWidth*DPR; cvs.height=innerHeight*DPR;
+    cvs.style.width=innerWidth+"px"; cvs.style.height=innerHeight+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    parts=[];
+    var n=REDUCED?0:Math.round(innerWidth/28);
+    for(var i=0;i<n;i++){
+      parts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+        r:Math.random()*1.6+0.4, vx:(Math.random()-0.5)*0.12, vy:-(Math.random()*0.22+0.04),
+        a:Math.random()*0.4+0.1, hue:Math.random()<0.7?"g":"l"});
+    }
+  }
+  function drawCanvas(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i]; p.x+=p.vx; p.y+=p.vy;
+      if(p.y< -10){p.y=innerHeight+10;p.x=Math.random()*innerWidth;}
+      if(p.x<-10)p.x=innerWidth+10; if(p.x>innerWidth+10)p.x=-10;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832);
+      ctx.fillStyle=(p.hue==="g"?"rgba(45,226,131,":"rgba(188,160,242,")+p.a+")";
+      ctx.fill();
+    }
+  }
+  var orb1=$("orb1"), orb2=$("orb2");
+
+  // =========================================================
+  //  ACT PANEL SWITCHING
+  // =========================================================
+  var panelIds=["envelope","trading","settlement","customer","governance","foundation"];
+  var panels={}; panelIds.forEach(function(k){panels[k]=$("panel-"+k);});
+  var lastAct=null;
+  function switchAct(act){
+    if(act===lastAct) return;
+    lastAct=act;
+    panelIds.forEach(function(k){ panels[k].classList.toggle("active", k===act); });
+  }
+  function panelActForAct(act){ return panelIds.indexOf(act)>=0 ? act : null; }
+
+  // =========================================================
+  //  MAIN LOOP
+  // =========================================================
+  function loop(){
+    smoothLocalProgress += (rawLocalProgress-smoothLocalProgress)*(REDUCED?1:0.14);
+    if(Math.abs(rawLocalProgress-smoothLocalProgress)<0.001) smoothLocalProgress=rawLocalProgress;
+
+    switchAct(panelActForAct(activeAct));
+
+    var pillNum=$("actPillNum"), pillLabel=$("actPillLabel");
+    var loopNum={intro:"—",envelope:"1",trading:"2",settlement:"3",customer:"4",governance:"5",foundation:"6",outro:"✓"}[activeAct]||"—";
+    pillNum.textContent=loopNum; pillLabel.textContent=ACT_LABELS[activeAct]||"";
+
+    if(RENDERERS[activeAct]) RENDERERS[activeAct](smoothLocalProgress);
+
+    drawCanvas();
+    for(var i=0;i<dots.length;i++){
+      dots[i].classList.toggle("active", i===activeIdx);
+      dots[i].classList.toggle("past", i<activeIdx);
+    }
+    if(!REDUCED){
+      var sc=window.scrollY||0;
+      orb1.style.transform="translate("+(Math.sin(Date.now()/6000)*16)+"px,"+(sc*-0.02+Math.cos(Date.now()/7000)*12)+"px)";
+      orb2.style.transform="translate("+(Math.cos(Date.now()/5500)*18)+"px,"+(sc*-0.015+Math.sin(Date.now()/6500)*14)+"px)";
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function beatIndex(p,n){ return clamp(Math.floor(p*n*0.999),0,n-1); }
+  function setBeatList(hostId,idx){
+    var host=$(hostId); if(!host) return;
+    [].slice.call(host.children).forEach(function(li){
+      var b=parseInt(li.dataset.beat,10);
+      li.classList.toggle("active", b===idx);
+      li.classList.toggle("done", b<idx);
+    });
+  }
+
+  // =========================================================
+  //  RENDERERS (stubs filled in per act below)
+  // =========================================================
+  var RENDERERS={};
+
+  // ---- boot ----
+  function boot(){
+    initCanvas(); computeActive();
+    requestAnimationFrame(loop);
+  }
+  var rb=$("restartBtn"); if(rb) rb.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"});});
+  boot();
+
+  // ACT_RENDERERS_START
+  window.__v2ctx = { V:V, V2:V2, PE:PE, N:N, clamp:clamp, lerp:lerp, easeOut:easeOut, nf:nf,
+    fmtEur:fmtEur, fmtEurM:fmtEurM, $:$, svgEl:svgEl, el:el, beatIndex:beatIndex, setBeatList:setBeatList,
+    RENDERERS:RENDERERS };
+  // ACT_RENDERERS_END
+})();
+</script>
+
+<script>
+// ================= ACT 1 — ENVELOPE (Loop 1 rescale) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V=C.V, V2=C.V2, PE=C.PE, N=C.N, clamp=C.clamp, easeOut=C.easeOut, nf=C.nf, $=C.$, svgEl=C.svgEl;
+  var scenario = V2.scenario||{};
+  var SCALE = scenario.evScaleFactor||22.22;
+  var boilerCfg = scenario.boiler||{baseMW:20,peakAddMW:10,centerStep:70,widthSteps:18};
+  var headline = V2.headline||{};
+
+  function base(i){ return ((PE[i]&&PE[i].baselineMW)||0)*SCALE; }
+  function pmax(i){ return ((PE[i]&&PE[i].pMaxMW)||0)*SCALE; }
+  function pmin(i){ return ((PE[i]&&PE[i].pMinMW)||0)*SCALE; }
+  function boiler(i){
+    var d=(i-boilerCfg.centerStep)/boilerCfg.widthSteps;
+    return boilerCfg.baseMW + boilerCfg.peakAddMW*Math.exp(-0.5*d*d);
+  }
+  var pmaxMax=0; for(var i=0;i<N;i++){ pmaxMax=Math.max(pmaxMax, pmax(i)+boiler(i)); }
+  var P_MIN_DOM=0, P_MAX_DOM=Math.ceil((pmaxMax+20)/40)*40;
+
+  var VBW=1440, VBH=900;
+  var M={l:92,r:110,t:130,b:104};
+  function plotW(){return VBW-M.l-M.r;}
+  function plotH(){return VBH-M.t-M.b;}
+  function xAt(i){return M.l+plotW()*(i/(N-1));}
+  function yP(mw){return M.t+plotH()*(1-(mw-P_MIN_DOM)/(P_MAX_DOM-P_MIN_DOM));}
+
+  function bandPath(topY,botY,p){
+    p=(p===undefined)?1:clamp(p,0,1);
+    var lim=Math.max(1,Math.round((N-1)*p));
+    var d="M";
+    for(var i=0;i<=lim;i++){ d+=(i?"L":"")+nf(xAt(i))+" "+nf(topY(i))+" "; }
+    for(var j=lim;j>=0;j--){ d+="L"+nf(xAt(j))+" "+nf(botY(j))+" "; }
+    return d+"Z";
+  }
+  function linePath(yfn,p){
+    p=(p===undefined)?1:clamp(p,0,1);
+    var lim=Math.max(0,Math.round((N-1)*p));
+    var d="M";
+    for(var i=0;i<=lim;i++){ d+=(i?"L":"")+nf(xAt(i))+" "+nf(yfn(i))+" "; }
+    return d;
+  }
+
+  var gAxes=$("gAxes"), gLabels=$("gLabels");
+  var gBoilerBand=$("gBoilerBand"), gUpBand=$("gUpBand"), gDownBand=$("gDownBand"), gBaseline=$("gBaseline"), gEvGlyph=$("gEvGlyph");
+
+  function buildAxes(){
+    gAxes.innerHTML=""; gLabels.innerHTML="";
+    var px=M.l,py=M.t,pw=plotW(),ph=plotH();
+    var step=40;
+    for(var mw=0; mw<=P_MAX_DOM; mw+=step){
+      var y=yP(mw);
+      gAxes.appendChild(svgEl("line",{x1:px,y1:y,x2:px+pw,y2:y,stroke:"rgba(255,255,255,0.05)","stroke-width":1}));
+      var t=svgEl("text",{x:px-14,y:y+4,"text-anchor":"end",class:"tnum",fill:"rgba(247,245,242,0.42)","font-size":12,"font-family":"inherit"});
+      t.textContent=mw; gLabels.appendChild(t);
+    }
+    for(var i=0;i<N;i+=16){
+      var x=xAt(i);
+      gAxes.appendChild(svgEl("line",{x1:x,y1:py,x2:x,y2:py+ph,stroke:"rgba(255,255,255,0.04)","stroke-width":1}));
+      var clk=(PE[i]&&PE[i].clock)||"";
+      var tl=svgEl("text",{x:x,y:py+ph+26,"text-anchor":"middle",class:"tnum",fill:"rgba(247,245,242,0.38)","font-size":11.5,"font-family":"inherit"});
+      tl.textContent=clk; gLabels.appendChild(tl);
+    }
+    gAxes.appendChild(svgEl("line",{x1:px,y1:py+ph,x2:px+pw,y2:py+ph,stroke:"rgba(255,255,255,0.14)","stroke-width":1.2}));
+    gAxes.appendChild(svgEl("line",{x1:px,y1:py,x2:px,y2:py+ph,stroke:"rgba(255,255,255,0.10)","stroke-width":1}));
+    var axTitle=svgEl("text",{x:px-14,y:py-18,"text-anchor":"end",fill:"rgba(45,226,131,0.7)","font-size":11,"letter-spacing":"0.12em","font-family":"inherit"});
+    axTitle.textContent="POWER · MW"; gLabels.appendChild(axTitle);
+  }
+  buildAxes();
+  gAxes.style.opacity=0; gLabels.style.opacity=0;
+  gAxes.style.transition="opacity .6s"; gLabels.style.transition="opacity .6s";
+  window.addEventListener("resize",function(){ clearTimeout(window.__envRt); window.__envRt=setTimeout(buildAxes,140); });
+
+  var boilerEl=svgEl("path",{fill:"url(#gBoiler)",stroke:"#BCA0F2","stroke-width":1.2,opacity:0});
+  gBoilerBand.appendChild(boilerEl);
+  var upEl=svgEl("path",{fill:"url(#gUp)",stroke:"none",opacity:0});
+  var pmaxLine=svgEl("path",{fill:"none",stroke:"#2DE283","stroke-width":1.4,opacity:0});
+  gUpBand.appendChild(upEl); gUpBand.appendChild(pmaxLine);
+  var downEl=svgEl("path",{fill:"url(#gDown)",stroke:"none",opacity:0});
+  var pminLine=svgEl("path",{fill:"none",stroke:"#FF6B5C","stroke-width":1.3,opacity:0});
+  gDownBand.appendChild(downEl); gDownBand.appendChild(pminLine);
+  var baseLine=svgEl("path",{fill:"none",stroke:"rgba(247,245,242,0.85)","stroke-width":1.8,"stroke-dasharray":"1 7",opacity:0});
+  gBaseline.appendChild(baseLine);
+
+  // one-EV glyph (mirrors v1's mechanic, drawn once)
+  var evBuilt=false;
+  function buildEv(){
+    if(evBuilt) return; evBuilt=true;
+    var x0=xAt(6), barW=54, yTop=yP(P_MAX_DOM*0.42), yBot=yP(0);
+    var track=svgEl("rect",{x:x0,y:yTop,width:barW,height:(yBot-yTop),rx:12,fill:"rgba(255,255,255,0.04)",stroke:"rgba(255,255,255,0.10)"});
+    gEvGlyph.appendChild(track);
+    var soc=45.7, tgt=80;
+    var fillH=(yBot-yTop)*(soc/100);
+    var fill=svgEl("rect",{x:x0,y:yBot-fillH,width:barW,height:fillH,rx:12,fill:"url(#gUp)"});
+    gEvGlyph.appendChild(fill);
+    var tgtY=yBot-(yBot-yTop)*(tgt/100);
+    gEvGlyph.appendChild(svgEl("line",{x1:x0-6,y1:tgtY,x2:x0+barW+6,y2:tgtY,stroke:"#5CEB9F","stroke-width":1.4,"stroke-dasharray":"4 4"}));
+    var tlab=svgEl("text",{x:x0+barW+12,y:tgtY+4,fill:"#5CEB9F","font-size":13,"font-family":"inherit",class:"tnum"});
+    tlab.textContent="80% target"; gEvGlyph.appendChild(tlab);
+    var slab=svgEl("text",{x:x0+barW/2,y:yBot-fillH-12,"text-anchor":"middle",fill:"#F7F5F2","font-size":15,"font-weight":700,"font-family":"inherit",class:"tnum"});
+    slab.textContent=soc+"%"; gEvGlyph.appendChild(slab);
+    var clab=svgEl("text",{x:x0+barW/2,y:yBot+24,"text-anchor":"middle",fill:"rgba(247,245,242,0.55)","font-size":12,"letter-spacing":"0.06em","font-family":"inherit"});
+    clab.textContent="ONE EV · 7.4 kW"; gEvGlyph.appendChild(clab);
+    var clab2=svgEl("text",{x:x0+barW/2,y:yBot+44,"text-anchor":"middle",fill:"rgba(247,245,242,0.35)","font-size":11,"font-family":"inherit"});
+    clab2.textContent="everything that follows is just this, multiplied"; gEvGlyph.appendChild(clab2);
+  }
+  buildEv();
+
+  function beatLocal(p,idx,n){ var w=1/n; return clamp((p-idx*w)/w,0,1); }
+
+  function render(progress){
+    var idx=C.beatIndex(progress,4);
+    C.setBeatList("envBeats",idx);
+
+    var evOn = idx===0 ? 1 : (1-easeOut(beatLocal(progress,1,4)));
+    gEvGlyph.setAttribute("opacity", clamp(evOn,0,1));
+
+    var fleetProg = easeOut(idx<1?0:beatLocal(progress,1,4));
+    var fleetOn = idx>=1 ? 1 : 0;
+    var showFleet = idx>=1;
+    gAxes.style.opacity = showFleet?1:0;
+    gLabels.style.opacity = showFleet?1:0;
+    var yBase=function(i){return yP(base(i));}, yMax=function(i){return yP(pmax(i));}, yMin=function(i){return yP(pmin(i));};
+    baseLine.setAttribute("d", linePath(yBase, showFleet?fleetProg:0));
+    baseLine.setAttribute("opacity", showFleet? clamp(fleetProg,0,0.85):0);
+    upEl.setAttribute("d", bandPath(yMax, yBase, showFleet?fleetProg:0));
+    pmaxLine.setAttribute("d", linePath(yMax, showFleet?fleetProg:0));
+    upEl.setAttribute("opacity", showFleet? fleetProg:0);
+    pmaxLine.setAttribute("opacity", showFleet? fleetProg:0);
+    downEl.setAttribute("d", bandPath(yBase, yMin, showFleet?fleetProg:0));
+    pminLine.setAttribute("d", linePath(yMin, showFleet?fleetProg:0));
+    downEl.setAttribute("opacity", showFleet? fleetProg*0.9:0);
+    pminLine.setAttribute("opacity", showFleet? fleetProg*0.8:0);
+
+    var fc=$("envFleetCounter");
+    if(showFleet){ fc.classList.add("show"); $("envFleetCounterV").textContent=Math.round(lerp0(0,scenario.targetEVs||100000,fleetProg)).toLocaleString(); }
+    else fc.classList.remove("show");
+
+    var boilerProg = easeOut(idx<2?0:beatLocal(progress,2,4));
+    var showBoiler = idx>=2;
+    boilerEl.setAttribute("d", bandPath(function(i){return yP(pmax(i)+boiler(i));}, yMax, showBoiler?boilerProg:0));
+    boilerEl.setAttribute("opacity", showBoiler? boilerProg:0);
+    var bl=$("envBoilerLabel");
+    if(showBoiler && boilerProg>0.5){ bl.classList.add("show"); positionBoilerLabel(); } else bl.classList.remove("show");
+
+    var revOn = idx>=3;
+    var revProg = easeOut(idx<3?0:beatLocal(progress,3,4));
+    var rm=$("envRevMeter");
+    if(revOn){ rm.classList.add("show");
+      var lo=(headline.hypothesisAnnualLowEur||18e6), hi=(headline.hypothesisAnnualHighEur||57e6);
+      var cur=lerp0(lo,hi,revProg);
+      $("envRevMeterV").textContent = "€"+(cur/1e6).toFixed(0)+"M/yr";
+    } else rm.classList.remove("show");
+  }
+  function lerp0(a,b,t){ return a+(b-a)*clamp(t,0,1); }
+
+  function positionBoilerLabel(){
+    var bl=$("envBoilerLabel");
+    var svg=$("stage"); var svgRect=svg.getBoundingClientRect();
+    var i=boilerCfg.centerStep;
+    var xFrac=xAt(i)/VBW, yFrac=yP(pmax(i)+boiler(i)*0.6)/VBH;
+    bl.style.left=(svgRect.left+svgRect.width*xFrac-90)+"px";
+    bl.style.top=(svgRect.top+svgRect.height*yFrac-70)+"px";
+    bl.style.position="fixed";
+  }
+
+  C.RENDERERS.envelope = render;
+})();
+</script>
+
+<script>
+// ================= ACT 2 — TRADING DESK (Loop 2) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V=C.V, V2=C.V2, clamp=C.clamp, easeOut=C.easeOut, $=C.$, svgEl=C.svgEl, el=C.el;
+  var PORT=V.portfolioSummary||{}, FLEET=V.fleetSummary||{}, SOC=V.socDistribution||[], PLUG=V.plugInOutRates||[];
+  var FCST=V.forecastAccuracy||{}, PE=V.powerEnvelope||[];
+  var N=Math.max(PE.length,1);
+
+  // KPI tiles (static content, built once)
+  var kpiHost=$("tradeKpis");
+  [
+    {v:(PORT.totalAvailableMW||8.4)+" MW", k:"Available now", s:"refreshed continuously", cls:"g"},
+    {v:(PORT.totalCommittedMW||5.2)+" MW", k:"Committed", s:"sold into market", cls:"w"},
+    {v:(PORT.totalUncommittedMW||3.2)+" MW", k:"Uncommitted", s:"free headroom", cls:"l"}
+  ].forEach(function(d){
+    var t=el("div","kpi-tile");
+    t.innerHTML='<div class="kv '+d.cls+'">'+d.v+'</div><div class="kk">'+d.k+'</div><div class="ks">'+d.s+'</div>';
+    kpiHost.appendChild(t);
+  });
+
+  // fleet bars (enrolled vs connected) — built once
+  var fleetBarsHost=$("tradeFleetBars");
+  var enrolled=FLEET.totalEnrolled||4218, connected=FLEET.currentlyConnected||3247, charging=FLEET.currentlyCharging||1892;
+  [
+    {label:"Enrolled", v:enrolled, max:enrolled, color:"var(--white)"},
+    {label:"Connected now", v:connected, max:enrolled, color:"var(--green-l)"},
+    {label:"Charging now", v:charging, max:enrolled, color:"var(--lav)"}
+  ].forEach(function(d){
+    var row=el("div","bar-row");
+    var pct=(d.v/d.max*100).toFixed(0);
+    row.innerHTML='<span class="bl">'+d.label+'</span><div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:'+pct+'%;background:'+d.color+';"></div></div><span class="bv">'+d.v.toLocaleString()+'</span>';
+    fleetBarsHost.appendChild(row);
+  });
+  $("tradeFleetSub").textContent = "17:00–19:00 plug-in wave";
+
+  // SOC distribution mini bars
+  var socHost=$("tradeSoc");
+  var socWrap=el("div"); socWrap.style.display="flex"; socWrap.style.gap="3px"; socWrap.style.alignItems="flex-end"; socWrap.style.height="46px";
+  var maxPct=Math.max.apply(null, SOC.map(function(s){return s.percentage;}).concat([1]));
+  SOC.forEach(function(s){
+    var bar=el("div"); bar.style.flex="1"; bar.style.background="linear-gradient(180deg,var(--green-l),var(--green-d))";
+    bar.style.height=Math.max(4,(s.percentage/maxPct*100))+"%"; bar.style.borderRadius="3px 3px 0 0"; bar.style.opacity="0.85";
+    bar.title=s.range+" · "+s.percentage+"%";
+    socWrap.appendChild(bar);
+  });
+  socHost.appendChild(socWrap);
+  var socLbl=el("div","ks","State-of-charge distribution across the fleet, right now");
+  socLbl.style.marginTop="6px"; socHost.appendChild(socLbl);
+
+  // forecast bands SVG (48h synthetic: today = powerEnvelope scaled narrow, tomorrow = wider)
+  var fsvg=$("forecastSvg");
+  var FW=600, FH=170, FM={l:6,r:6,t:14,b:22};
+  function fx(i,total){ return FM.l+(FW-FM.l-FM.r)*(i/(total-1)); }
+  function fy(v,maxV){ return FM.t+(FH-FM.t-FM.b)*(1-v/maxV); }
+  var committed=PORT.totalCommittedMW||5.2;
+  var baseArr=PE.map(function(p){return p.baselineMW||0;});
+  var maxArr=PE.map(function(p){return p.pMaxMW||0;});
+  var minArr=PE.map(function(p){return p.pMinMW||0;});
+  var total=N*2; // today + tomorrow, same shape, tomorrow band a bit wider (less certain)
+  var domainMax=Math.max.apply(null, maxArr.concat([committed]))*1.35;
+  function seriesPath(getter, widen){
+    var d="M";
+    for(var i=0;i<total;i++){
+      var srcI=i%N; var day=Math.floor(i/N);
+      var v=getter(srcI);
+      if(day===1 && widen) v=v*widen;
+      d+=(i?"L":"")+fx(i,total).toFixed(1)+" "+fy(v,domainMax).toFixed(1)+" ";
+    }
+    return d;
+  }
+  function bandAreaPath(hiFn,loFn,widenHi,widenLo){
+    var d="M";
+    for(var i=0;i<total;i++){
+      var srcI=i%N, day=Math.floor(i/N);
+      var v=hiFn(srcI); if(day===1) v*=widenHi;
+      d+=(i?"L":"")+fx(i,total).toFixed(1)+" "+fy(v,domainMax).toFixed(1)+" ";
+    }
+    for(var j=total-1;j>=0;j--){
+      var srcJ=j%N, dayJ=Math.floor(j/N);
+      var v2=loFn(srcJ); if(dayJ===1) v2*=widenLo;
+      d+="L"+fx(j,total).toFixed(1)+" "+fy(v2,domainMax).toFixed(1)+" ";
+    }
+    return d+"Z";
+  }
+  fsvg.innerHTML =
+    '<path d="'+bandAreaPath(function(i){return maxArr[i];}, function(i){return minArr[i];}, 1.28, 0.55)+'" fill="rgba(45,226,131,0.14)" stroke="none"/>' +
+    '<path d="'+seriesPath(function(i){return baseArr[i];},1.05)+'" fill="none" stroke="rgba(247,245,242,0.55)" stroke-width="1.3" stroke-dasharray="2 5"/>' +
+    '<line x1="'+FM.l+'" y1="'+fy(committed,domainMax).toFixed(1)+'" x2="'+(FW-FM.r)+'" y2="'+fy(committed,domainMax).toFixed(1)+'" stroke="#5CEB9F" stroke-width="1.6" stroke-dasharray="4 4"/>' +
+    '<line x1="'+fx(N,total)+'" y1="'+FM.t+'" x2="'+fx(N,total)+'" y2="'+(FH-FM.b)+'" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>' +
+    '<text x="'+fx(N/2,total)+'" y="'+(FH-6)+'" text-anchor="middle" fill="rgba(247,245,242,0.4)" font-size="10.5">Today</text>' +
+    '<text x="'+fx(N+N/2,total)+'" y="'+(FH-6)+'" text-anchor="middle" fill="rgba(247,245,242,0.4)" font-size="10.5">Tomorrow</text>' +
+    '<text x="'+(FW-FM.r)+'" y="'+(fy(committed,domainMax)-6).toFixed(1)+'" text-anchor="end" fill="#5CEB9F" font-size="10.5">committed '+committed+' MW</text>';
+
+  $("tradeForecastSub").textContent = "15-min resolution · MAE "+(FCST.maeP50||0.42)+" MW";
+
+  function render(progress){
+    var idx=C.beatIndex(progress,3);
+    C.setBeatList("tradeBeats",idx);
+    var cards=[$("tradeKpis"),$("tradeFleetCard"),$("tradeForecastCard")];
+    cards.forEach(function(c,i){ if(c.classList) c.classList.toggle("dim", i!==idx && c.id!=="tradeKpis"); });
+    // dim as groups: kpiStrip highlighted at beat0, fleet card at beat1, forecast card at beat2
+    $("tradeFleetCard").classList.toggle("dim", idx!==1);
+    $("tradeForecastCard").classList.toggle("dim", idx!==2);
+    kpiHost.style.opacity = idx===0?1:0.55;
+  }
+  C.RENDERERS.trading = render;
+})();
+</script>
+
+<script>
+// ================= ACT 3 — DISPATCH-TO-SETTLEMENT (Loop 3) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V=C.V, V2=C.V2, clamp=C.clamp, $=C.$, el=C.el, fmtEur=C.fmtEur;
+  var BIDS=V.marketBids||[], EVENTS=V.dispatchEvents||[], REV=V.revenueByProduct||[];
+  var headline=V2.headline||{};
+
+  var STATUS_CLASS={Accepted:"accepted",Pending:"pending",Rejected:"rejected",Expired:"rejected"};
+  var tbody=$("bidBookTable").querySelector("tbody");
+  BIDS.slice(0,6).forEach(function(b){
+    var tr=el("tr");
+    tr.innerHTML='<td>'+b.product+'</td><td>'+b.mw+'</td><td>'+b.priceEurMWh+'</td><td>'+b.deliveryStart+'–'+b.deliveryEnd+'</td>'+
+      '<td><span class="status-chip '+(STATUS_CLASS[b.status]||"pending")+'">'+b.status+'</span></td>';
+    tbody.appendChild(tr);
+  });
+
+  var pick = EVENTS.filter(function(e){return e.type==="Grid Stress";})[0] || EVENTS[0] || {};
+  $("dispatchId").textContent = pick.id||"";
+  var db=$("dispatchBody");
+  var pct = pick.targetMW ? (pick.deliveredMW/pick.targetMW*100) : 0;
+  db.innerHTML =
+    '<div class="whatif-row"><span>'+ (pick.type||"") +' · '+(pick.startTime||"")+'–'+(pick.endTime||"")+'</span><span></span></div>'+
+    '<div class="bar-row"><span class="bl">Target</span><div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:100%;background:rgba(255,255,255,0.2);"></div></div><span class="bv">'+(pick.targetMW||0)+' MW</span></div>'+
+    '<div class="bar-row"><span class="bl">Delivered</span><div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:'+clamp(pct,0,100)+'%;background:var(--green-l);"></div></div><span class="bv">'+(pick.deliveredMW||0)+' MW</span></div>'+
+    '<div class="whatif-row"><span>Chargers dispatched → responded</span><b>'+(pick.chargersDispatched||0)+' → '+(pick.chargersResponded||0)+'</b></div>'+
+    '<div class="whatif-row"><span>Opt-outs</span><b>'+(pick.userOptOuts||0)+'</b></div>'+
+    '<div class="whatif-row"><span>Revenue</span><b class="tnum" style="color:var(--green-l)">'+fmtEur(pick.revenueEur||0)+'</b></div>';
+
+  var pnl=$("pnlBody");
+  var net=headline.netProgramSavingsEur||312000, cost=headline.costPerCustomerEurYr||42, lift=headline.rebalancingLiftEur||42000;
+  var mixHtml = REV.map(function(r){
+    return '<div class="bar-row"><span class="bl">'+r.product+'</span><div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:'+r.percentageOfTotal+'%;background:'+(r.color||"var(--green-l)")+';"></div></div><span class="bv">'+r.percentageOfTotal+'%</span></div>';
+  }).join("");
+  pnl.innerHTML =
+    '<div style="display:flex;gap:22px;margin-bottom:14px;">'+
+      '<div><div style="font-size:26px;font-weight:800;color:var(--green-l);" class="tnum">'+fmtEur(net)+'</div><div class="ks">Net savings YTD</div></div>'+
+      '<div><div style="font-size:26px;font-weight:800;color:var(--white);" class="tnum">€'+cost+'</div><div class="ks">Cost / customer / yr</div></div>'+
+    '</div>'+ mixHtml +
+    '<div class="msg-preview">+'+fmtEur(lift)+'/yr found by rebalancing FCR-D Down ↔ FCR-N exposure — margin from market participation, not tariffs.</div>';
+
+  function render(progress){
+    var idx=C.beatIndex(progress,3);
+    C.setBeatList("settleBeats",idx);
+    $("bidBookCard").classList.toggle("dim", idx!==0);
+    $("dispatchCard").classList.toggle("dim", idx!==1);
+    $("pnlCard").classList.toggle("dim", idx!==2);
+  }
+  C.RENDERERS.settlement = render;
+})();
+</script>
+
+<script>
+// ================= ACT 4 — CUSTOMER GUARANTEE (Loop 4) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V=C.V, V2=C.V2, clamp=C.clamp, $=C.$, el=C.el;
+  var CH=V.consumerHourlyEurMwh||[], PORT=V.portfolioSummary||{};
+  var cust=V2.customer||{}, headline=V2.headline||{};
+  var tomorrow = CH.slice(24,48);
+  if(tomorrow.length<24){ tomorrow=CH.slice(0,24); }
+
+  var psvg=$("priceSvg"); var PW=190,PH=90,PM={l:4,r:4,t:10,b:14};
+  var maxP=Math.max.apply(null, tomorrow.concat([1]))*1.18;
+  function px2(i){ return PM.l+(PW-PM.l-PM.r)*(i/(tomorrow.length-1)); }
+  function py2(v){ return PM.t+(PH-PM.t-PM.b)*(1-v/maxP); }
+  var d="M"; tomorrow.forEach(function(v,i){ d+=(i?"L":"")+px2(i).toFixed(1)+" "+py2(v).toFixed(1)+" "; });
+  var spikeH=(cust.priceCurve&&cust.priceCurve.spikeHour)||17, troughH=(cust.priceCurve&&cust.priceCurve.troughHour)||3;
+  psvg.innerHTML = '<path d="'+d+' L'+px2(tomorrow.length-1).toFixed(1)+' '+(PH-PM.b)+' L'+px2(0).toFixed(1)+' '+(PH-PM.b)+' Z" fill="rgba(255,107,92,0.08)" stroke="none"/>'+
+    '<path d="'+d+'" fill="none" stroke="#FF6B5C" stroke-width="1.6"/>'+
+    '<circle cx="'+px2(spikeH).toFixed(1)+'" cy="'+py2(tomorrow[spikeH]||350).toFixed(1)+'" r="3" fill="#FF6B5C"/>'+
+    '<text x="'+px2(spikeH).toFixed(1)+'" y="'+(py2(tomorrow[spikeH]||350)-8).toFixed(1)+'" text-anchor="middle" fill="#FF6B5C" font-size="9.5" font-weight="700">'+(tomorrow[spikeH]||350)+'</text>'+
+    '<circle cx="'+px2(troughH).toFixed(1)+'" cy="'+py2(tomorrow[troughH]||11).toFixed(1)+'" r="3" fill="#5CEB9F"/>'+
+    '<text x="'+px2(troughH).toFixed(1)+'" y="'+(py2(tomorrow[troughH]||11)+14).toFixed(1)+'" text-anchor="middle" fill="#5CEB9F" font-size="9.5" font-weight="700">'+(tomorrow[troughH]||11)+'</text>';
+
+  var sess=cust.optimizedSession||{};
+  $("sessionBody").innerHTML =
+    '<div class="whatif-row"><span>Shifted from</span><b>'+(sess.shiftedFrom||"")+'</b></div>'+
+    '<div class="whatif-row"><span>Shifted to</span><b style="color:var(--green-l)">'+(sess.shiftedTo||"")+'</b></div>'+
+    '<div class="whatif-row"><span>Saved</span><b style="color:var(--green-l)">€'+(sess.savedEur||0)+'</b></div>'+
+    '<div class="whatif-row"><span>Ready by</span><b>'+(sess.readyBy||"")+' ✓ guaranteed</b></div>';
+
+  var leverHost=$("leverBody");
+  (cust.trustLevers||[]).forEach(function(l,i){
+    var row=el("div","lever-row");
+    row.innerHTML='<span class="lb">✓</span><div><b>'+l.title+'</b><p>'+l.detail+'</p></div>';
+    leverHost.appendChild(row);
+  });
+
+  var kpiHost=$("customerKpis");
+  [
+    {v:"4,218", k:"Enrolled EVs", cls:"w"},
+    {v:(PORT.optOutRate!==undefined?PORT.optOutRate:0.4)+"%", k:"Opt-out rate", cls:"c"},
+    {v:"€"+((headline.netProgramSavingsEur||312000)/1000).toFixed(0)+"K", k:"Returned to households", cls:"g"}
+  ].forEach(function(d){
+    var t=el("div","kpi-tile");
+    t.innerHTML='<div class="kv '+d.cls+'">'+d.v+'</div><div class="kk">'+d.k+'</div>';
+    kpiHost.appendChild(t);
+  });
+
+  function render(progress){
+    var idx=C.beatIndex(progress,3);
+    C.setBeatList("custBeats",idx);
+    $("phonePrice").classList.toggle("dim", idx!==0);
+    $("phoneSession").classList.toggle("dim", idx!==1);
+    $("leverCard").classList.toggle("dim", idx!==2);
+    kpiHost.style.opacity = idx===2?1:0.6;
+  }
+  C.RENDERERS.customer = render;
+})();
+</script>
+
+<script>
+// ================= ACT 5 — GOVERNANCE (Loop 5) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V=C.V, V2=C.V2, clamp=C.clamp, $=C.$, el=C.el;
+  var PORT=V.portfolioSummary||{};
+  var gov=V2.governance||{};
+
+  var kpiHost=$("govKpis");
+  [
+    {v:(PORT.deliverySuccessRate||96.2)+"%", k:"Delivery success", cls:"g"},
+    {v:(PORT.eventsToday||7), k:"Events today", cls:"w"},
+    {v:(PORT.optOutRate||0.4)+"%", k:"Opt-out rate", cls:"l"}
+  ].forEach(function(d){
+    var t=el("div","kpi-tile");
+    t.innerHTML='<div class="kv '+d.cls+'">'+d.v+'</div><div class="kk">'+d.k+'</div>';
+    kpiHost.appendChild(t);
+  });
+
+  var inboxHost=$("govInboxBody");
+  (gov.actionInbox||[]).forEach(function(item){
+    var row=el("div","inbox-item "+(item.urgency==="warn"?"warn":"normal"));
+    row.innerHTML='<span class="idot"></span><div><b>'+item.title+'</b><p>'+item.detail+'</p></div>';
+    inboxHost.appendChild(row);
+  });
+
+  var wi=gov.whatIf||{};
+  $("whatIfTitle").textContent=wi.title||"What-if decision";
+  $("whatIfWindow").textContent=wi.window||"";
+  $("govWhatIfBody").innerHTML =
+    '<div class="whatif-row"><span>Available flexibility</span><b>'+(wi.mwBefore||0)+' → '+(wi.mwAfter||0)+' MW</b></div>'+
+    '<div class="whatif-row"><span>Revenue lift</span><b style="color:var(--green-l)">+€'+(wi.revenueLiftEurPerDay||0).toLocaleString()+'/day</b></div>'+
+    '<div class="whatif-row"><span>Modelled opt-out cost</span><b style="color:var(--amber)">+'+(wi.modelledOptOutDeltaPct||0)+' pp</b></div>'+
+    '<div class="whatif-row"><span>Status</span><b>'+(wi.reversible?"Reversible · not yet committed":"Committed")+'</b></div>'+
+    '<div class="msg-preview">"'+(wi.customerMessage||"")+'"</div>';
+
+  var auditBody=$("auditTable").querySelector("tbody");
+  (gov.auditTrail||[]).forEach(function(r){
+    var tr=el("tr");
+    tr.innerHTML='<td>'+r.ts+'</td><td>'+r.actor+'</td><td>'+r.action+'</td><td>'+r.reason+'</td><td class="audit-hash">'+r.hash+'</td>';
+    auditBody.appendChild(tr);
+  });
+
+  var detailPanels=[$("govInbox"),$("govWhatIf"),$("govAudit")];
+  function render(progress){
+    var idx=C.beatIndex(progress,3);
+    C.setBeatList("govBeats",idx);
+    detailPanels.forEach(function(p,i){ p.classList.toggle("active", i===idx); });
+    kpiHost.style.opacity = idx===0?1:0.65;
+  }
+  C.RENDERERS.governance = render;
+})();
+</script>
+
+<script>
+// ================= ACT 6 — FOUNDATION (Loop 6) =================
+(function(){
+  "use strict";
+  var C=window.__v2ctx, V2=C.V2, $=C.$, el=C.el, svgEl=C.svgEl;
+  var fnd=V2.foundation||{};
+
+  // lineage flow diagram
+  var lsvg=$("lineageSvg");
+  var sources=fnd.sources||[], apps=fnd.apps||[];
+  var W=600,H=320;
+  var srcX=90, storeX=300, appX=510;
+  var srcY0=30, srcGap=(H-60)/Math.max(sources.length-1,1);
+  var appY0=60, appGap=(H-120)/Math.max(apps.length-1,1);
+  var storeY=H/2;
+  var svgParts=[];
+  sources.forEach(function(s,i){
+    var y=srcY0+i*srcGap;
+    svgParts.push('<rect x="'+(srcX-70)+'" y="'+(y-16)+'" width="140" height="32" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)"/>');
+    svgParts.push('<text x="'+srcX+'" y="'+(y+4)+'" text-anchor="middle" fill="rgba(247,245,242,0.75)" font-size="10.5">'+s+'</text>');
+    svgParts.push('<path d="M'+(srcX+70)+' '+y+' C '+((srcX+storeX)/2)+' '+y+', '+((srcX+storeX)/2)+' '+storeY+', '+(storeX-64)+' '+storeY+'" fill="none" stroke="rgba(45,226,131,0.28)" stroke-width="1.2"/>');
+  });
+  svgParts.push('<rect x="'+(storeX-64)+'" y="'+(storeY-34)+'" width="128" height="68" rx="12" fill="rgba(45,226,131,0.10)" stroke="#2DE283" stroke-width="1.4"/>');
+  svgParts.push('<text x="'+storeX+'" y="'+(storeY-4)+'" text-anchor="middle" fill="#5CEB9F" font-size="11" font-weight="700">Governed</text>');
+  svgParts.push('<text x="'+storeX+'" y="'+(storeY+13)+'" text-anchor="middle" fill="#5CEB9F" font-size="11" font-weight="700">Lakehouse</text>');
+  apps.forEach(function(a,i){
+    var y=appY0+i*appGap;
+    svgParts.push('<path d="M'+(storeX+64)+' '+storeY+' C '+((storeX+appX)/2)+' '+storeY+', '+((storeX+appX)/2)+' '+y+', '+(appX-66)+' '+y+'" fill="none" stroke="rgba(188,160,242,0.35)" stroke-width="1.2"/>');
+    svgParts.push('<rect x="'+(appX-66)+'" y="'+(y-16)+'" width="132" height="32" rx="8" fill="rgba(188,160,242,0.08)" stroke="rgba(188,160,242,0.4)"/>');
+    svgParts.push('<text x="'+appX+'" y="'+(y+4)+'" text-anchor="middle" fill="#BCA0F2" font-size="10.5">'+a+'</text>');
+  });
+  lsvg.innerHTML=svgParts.join("");
+
+  var traceHost=$("traceChain");
+  (fnd.tracePath||[]).forEach(function(t,i){
+    if(i>0){ var arrow=el("div","trace-arrow","↓"); traceHost.appendChild(arrow); }
+    var node=el("div","trace-node",t); node.dataset.i=i; traceHost.appendChild(node);
+  });
+
+  var expandHost=$("expandStrip");
+  (fnd.expansionPath||[]).forEach(function(p,i){
+    var stop=el("div","expand-stop "+p.status); stop.dataset.i=i;
+    stop.innerHTML='<div class="ep">'+p.phase+'</div><div class="el">'+p.label+'</div><div class="ed">'+p.detail+'</div>';
+    expandHost.appendChild(stop);
+  });
+
+  var detailPanels=[$("foundFlow"),$("foundTrace"),$("foundExpand")];
+  function render(progress){
+    var idx=C.beatIndex(progress,3);
+    C.setBeatList("foundBeats",idx);
+    detailPanels.forEach(function(p,i){ p.classList.toggle("active", i===idx); });
+    if(idx===1){
+      [].slice.call(traceHost.querySelectorAll(".trace-node")).forEach(function(n){
+        n.classList.toggle("on", true);
+      });
+    }
+    if(idx===2){
+      [].slice.call(expandHost.querySelectorAll(".expand-stop")).forEach(function(n,i){ n.classList.toggle("on", true); });
+    }
+  }
+  C.RENDERERS.foundation = render;
+})();
+</script>
+
+<script>
+// ================= OUTRO count-up =================
+(function(){
+  "use strict";
+  var $=window.__v2ctx.$;
+  function easeOut(t){t=t<0?0:(t>1?1:t);return 1-Math.pow(1-t,3);}
+  function countUp(el,to,pre,suf,dec){
+    if(!el) return; var start=null, dur=1300, from=0;
+    function step(ts){ if(!start)start=ts; var t=Math.min((ts-start)/dur,1); var e=easeOut(t);
+      var v=from+(to-from)*e;
+      el.textContent=pre+(dec?v.toFixed(dec):Math.round(v).toLocaleString())+(suf||"");
+      if(t<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  var outroSec=document.querySelector(".outro");
+  if(!outroSec) return;
+  var done=false;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting && !done){ done=true; outroSec.classList.add("seen"); } });
+  },{threshold:0.4});
+  io.observe(outroSec);
+})();
+</script>
+</body>
+</html>

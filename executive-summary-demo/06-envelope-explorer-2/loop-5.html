@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 5 · Governance · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-governance">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>COMMAND BRIDGE</div>
+      <div class="kpi-strip" id="govKpis"></div>
+      <div class="detail-slot" id="govDetailSlot">
+        <div class="detail-panel panel-card" id="govInbox">
+          <div class="pc-h"><span>ACTION INBOX</span><span></span></div>
+          <div id="govInboxBody"></div>
+        </div>
+        <div class="detail-panel panel-card" id="govWhatIf">
+          <div class="pc-h"><span id="whatIfTitle"></span><span id="whatIfWindow"></span></div>
+          <div id="govWhatIfBody"></div>
+        </div>
+        <div class="detail-panel panel-card" id="govAudit">
+          <div class="pc-h"><span>AUDIT TRAIL · HASH-CHAINED</span><span>7-yr retention</span></div>
+          <table class="mini-table audit-row" id="auditTable"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Reason</th><th>Hash</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="governance" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 5</span> Run in minutes, defend for seven years</div>
+      <h2>Growth without growing the <span class="hl">governance risk</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>Scaling multiplies the ways this can go wrong — over-dispatching loyal customers, missing a
+        vulnerable household, an unexplainable settlement. I'll show the program team's command view,
+        where every risk arrives as a decision with its consequences modelled first.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="governance" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> A decision inbox with modelled what-ifs</div>
+      <h2>Every action, a decision — <span class="hl">not</span> a dashboard.</h2>
+      <ul class="beat-list" id="govBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The command bridge: live program KPIs and an action inbox — enrollment approvals, a fairness flag, a settlement dispute.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Open the pre-positioning decision for a hot Friday: available flexibility rising from 6.2 to 11.4 MW, the revenue lift, the modelled opt-out cost, and the exact customer message that would be sent.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The audit trail: every action recorded with actor, reason and hash-chained entries retained for seven years; vulnerable-customer protections at 100% compliance.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="governance" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>Governance here is not a brake — it's what makes <span class="hl">scale safe</span>.</h2>
+      <p>Fairness and auditability are what let you say yes to growth: the program moves at market speed
+        while every decision stays explainable to a regulator, a journalist, or your own board.</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"governance", beats:3, prev:"loop-4.html", next:"loop-6.html", num:"5", label:"Loop 5 · Governance", nextLabel:"Next loop \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

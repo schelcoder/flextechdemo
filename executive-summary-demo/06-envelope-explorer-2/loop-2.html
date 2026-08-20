@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 2 · The beating heart · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+<style>
+  /* --- Loop 2: beating-heart realtime desk --- */
+  #ecgWrap{position:relative;}
+  #ecgSvg{width:100%;display:block;}
+  .bpm-badge{position:absolute;top:8px;right:12px;text-align:right;}
+  .bpm-badge .bpm-v{font-size:26px;font-weight:800;color:var(--green-l);line-height:1;}
+  .bpm-badge .bpm-k{font-size:10.5px;letter-spacing:.14em;color:rgba(247,245,242,.45);text-transform:uppercase;}
+  .beat-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green-l);margin-right:7px;
+    box-shadow:0 0 0 0 rgba(45,226,131,.6);}
+  .live-tag{display:inline-flex;align-items:center;font-size:11px;letter-spacing:.13em;
+    color:rgba(247,245,242,.55);text-transform:uppercase;}
+  /* beat-allocation ring + stack */
+  .alloc-grid{display:flex;gap:22px;align-items:center;margin-top:6px;}
+  #allocRing{width:132px;height:132px;flex:0 0 auto;}
+  .alloc-legend{flex:1;display:flex;flex-direction:column;gap:9px;}
+  .alloc-legend .row{display:flex;align-items:center;gap:9px;font-size:13px;}
+  .alloc-legend .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto;}
+  .alloc-legend .rl{color:rgba(247,245,242,.7);flex:1;}
+  .alloc-legend .rv{font-weight:700;font-variant-numeric:tabular-nums;}
+  .onplan-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+    padding:4px 11px;border-radius:999px;background:rgba(45,226,131,.12);
+    border:1px solid rgba(45,226,131,.4);color:var(--green-l);}
+</style>
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-trading">
+    <div class="dash">
+      <div class="dash-head"><span class="blip"></span>LIVE DESK · THE FLEET'S BEATING HEART</div>
+      <div class="kpi-strip" id="tradeKpis"></div>
+
+      <div class="panel-card" id="tradeHeartCard">
+        <div class="pc-h">
+          <span>REALTIME PULSE · CONTROLLABLE FLEET</span>
+          <span class="live-tag"><span class="beat-dot" id="beatDot"></span>LIVE</span>
+        </div>
+        <div id="ecgWrap">
+          <svg id="ecgSvg" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
+          <div class="bpm-badge">
+            <div class="bpm-v" id="bpmV">—</div>
+            <div class="bpm-k">dispatch beats / hr</div>
+          </div>
+        </div>
+        <div id="tradeHeartSub" class="ks" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="panel-card" id="tradeAllocCard">
+        <div class="pc-h"><span>BEAT ALLOCATION · HOW MUCH FLEXIBILITY THE BEAT CLAIMS</span><span id="allocSub"></span></div>
+        <div class="alloc-grid">
+          <svg id="allocRing" viewBox="0 0 120 120"></svg>
+          <div class="alloc-legend" id="allocLegend"></div>
+        </div>
+      </div>
+
+      <div class="panel-card" id="tradeForecastCard">
+        <div class="pc-h"><span>DAY-AHEAD BEAT vs REALTIME · ON PLAN?</span><span id="tradeForecastSub"></span></div>
+        <svg id="forecastSvg" viewBox="0 0 600 150" style="width:100%;display:block;"></svg>
+        <div style="margin-top:10px;"><span class="onplan-chip" id="onPlanChip">● tracking plan</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="trading" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 2</span> One controllable fleet, beating live</div>
+      <h2>The fleet has a <span class="hl">pulse</span> — and the desk can read it in realtime.</h2>
+      <p class="cue">So you can…</p>
+      <p>Yesterday the desk forecast the <b>beat</b> — the megawatts we'd commit into the market today.
+        Now the <b>4,218-vehicle</b> fleet is a single controllable asset with a heartbeat, and every
+        pulse is a dispatch interval delivering against that commitment. I'll show the beating heart live,
+        how much of the fleet's flexibility the beat is claiming, and whether it's all going to plan.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="trading" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> The beating heart of the fleet</div>
+      <h2>Realtime pulse, <span class="hl">day-ahead beat</span>, on plan.</h2>
+      <ul class="beat-list" id="tradeBeats">
+        <li data-beat="0"><span class="bn">1</span><span>The beating heart: the whole controllable fleet as one live pulse — <b>8.4 MW</b> of flexibility available right now, refreshed continuously, each beat a dispatch interval you can feel.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>The beat allocation: yesterday's forecast set the commitment, so <b>5.2 MW</b> — <b>62%</b> of the fleet's flexibility — is allocated to serving the beat, with 3.2 MW of headroom still free to trade.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>On plan: realtime delivery is tracking the day-ahead forecast beat inside the confidence band — <b>96.2%</b> delivery success, everything going according to plan, no analyst middleware.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="trading" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>A fleet you can <span class="hl">feel deliver</span> is a fleet you can sell.</h2>
+      <p>When the desk can watch the beat land in realtime — flexibility allocated, commitment met, plan
+        held — retail assets become capacity a transmission operator will pay for. That live, provable
+        heartbeat, not the megawatts alone, is what makes the 200,000-customer path investable.</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"trading", beats:3, prev:"loop-1.html", next:"loop-3.html", num:"2", label:"Loop 2 · Beating heart", nextLabel:"Next loop ›" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

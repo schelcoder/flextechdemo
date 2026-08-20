@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 1 · Envelope · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-envelope">
+    <svg id="stage" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-label="Rescaled Power Envelope stage">
+      <defs>
+        <linearGradient id="gUp" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2DE283" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#2DE283" stop-opacity="0.06"/>
+        </linearGradient>
+        <linearGradient id="gDown" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF6B5C" stop-opacity="0.10"/>
+          <stop offset="100%" stop-color="#FF6B5C" stop-opacity="0.46"/>
+        </linearGradient>
+        <linearGradient id="gBoiler" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#BCA0F2" stop-opacity="0.5"/>
+          <stop offset="100%" stop-color="#BCA0F2" stop-opacity="0.08"/>
+        </linearGradient>
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <clipPath id="plotClip"><rect x="0" y="0" width="1440" height="900"/></clipPath>
+      </defs>
+      <g id="gAxes"></g>
+      <g clip-path="url(#plotClip)">
+        <g id="gBoilerBand"></g>
+        <g id="gUpBand"></g>
+        <g id="gDownBand"></g>
+        <g id="gBaseline"></g>
+        <g id="gEvGlyph"></g>
+      </g>
+      <g id="gLabels"></g>
+    </svg>
+    <div class="env-tag" id="envFleetCounter"><span class="v" id="envFleetCounterV">0</span><span class="k">Enrolled EVs · hypothesis</span></div>
+    <div class="env-tag" id="envBoilerLabel"><span class="v">+20–30 MW</span><span class="k">One district-heating boiler backing down — firm, dispatchable headroom</span></div>
+    <div class="env-tag" id="envRevMeter">
+      <div class="rk0">Combined portfolio · annualized</div>
+      <div class="rv" id="envRevMeterV">€0M</div>
+      <div class="rk">Hypothesis range · re-base in Phase 1</div>
+      <span class="rtag">Hypothesis</span>
+      <div class="rcheck"><b>✓</b> Every customer still charged by departure</div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="envelope" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 1</span> An ordinary Tuesday</div>
+      <h2>100,000 cars and one boiler become your <span class="hl">next power plant</span>.</h2>
+      <p class="cue">So you can…</p>
+      <p>The Nordics have record generation capacity and record volatility. Transmission is delayed,
+        battery capex keeps climbing, and the one lever that scales with renewables is the flexibility
+        already sitting on your customers' side of the meter. I'll open with what that looks like as
+        <b>one orchestrated asset</b> — so you can judge the size of the prize before we prove the
+        machinery behind it.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="envelope" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> The aggregated flexibility envelope</div>
+      <h2>From <span class="hl">one EV</span> to a <span class="hll">portfolio-scale</span> asset.</h2>
+      <ul class="beat-list" id="envBeats">
+        <li data-beat="0"><span class="bn">1</span><span>One EV plugged in for the night — the small, familiar act of charging. Everything that follows is just this, multiplied and orchestrated.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>Scroll: the fleet scales to <b>100,000 enrolled EVs</b> and the flexibility band fans out to roughly <b>200 MW</b> — on a usual weather pattern, no storm, no cold snap. This is an ordinary day.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>A district-heating electric boiler backs down inside the same envelope — one industrial asset adding <b>20–30 MW</b> of firm, dispatchable headroom. One boiler moves like thousands of cars, and it never drives away.</span></li>
+        <li data-beat="3"><span class="bn">4</span><span>The revenue counter lands on the combined portfolio — stated as a <b>hypothesis range</b> — with every customer still charged by departure time.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="envelope" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>A capacity line that grows <span class="hl">with</span> renewables, not against them.</h2>
+      <p>Every orchestrated megawatt is a megawatt of peaker capacity, grid reinforcement or curtailment
+        you do not have to buy — a near-zero-marginal-cost capacity line. The rest of this session proves
+        it is running machinery, not a concept video.</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"envelope", beats:4, prev:"v2.html", next:"loop-2.html", num:"1", label:"Loop 1 · Envelope", nextLabel:"Next loop \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>

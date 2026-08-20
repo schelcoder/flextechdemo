@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loop 4 · Customer · Energy Company VPP</title>
+<link rel="stylesheet" href="v2-shared.css" />
+</head>
+<body>
+
+<canvas id="ambient"></canvas>
+<div class="orb g" id="orb1" style="width:520px;height:520px;left:-120px;top:-80px;"></div>
+<div class="orb l" id="orb2" style="width:480px;height:480px;right:-100px;bottom:-120px;"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="brandmark">
+    <span class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="13" r="12" stroke="#2DE283" stroke-width="1.4" opacity="0.55"/>
+        <path d="M13 4.2 C8.4 8.5 8.4 14.2 13 21.8 C17.6 14.2 17.6 8.5 13 4.2 Z" fill="#2DE283" opacity="0.92"/>
+        <circle cx="13" cy="12.4" r="2.1" fill="#0A0F0D"/>
+      </svg>
+    </span>
+    <div class="brand-txt">
+      <b>Energy Company</b><span>VPP Desk</span>
+    </div>
+  </div>
+  <div class="header-sep"></div>
+  <div class="concept-name">Demo Plan v2&nbsp;&nbsp;<em>· Capacity, Margin, Trust</em></div>
+  <div class="act-pill"><span class="n" id="actPillNum">—</span><span id="actPillLabel">Intro</span></div>
+</header>
+
+<nav id="rail"></nav>
+
+<div class="stage-wrap">
+  <div class="act-panel" id="panel-customer">
+    <div class="dash" style="flex-direction:row;align-items:flex-start;gap:22px;">
+      <div style="display:flex;flex-direction:column;gap:16px;flex:0 0 auto;">
+        <div class="dash-head"><span class="blip"></span>CONSUMER APP</div>
+        <div class="phone" id="phonePrice">
+          <div class="ph-head">Tomorrow's price</div>
+          <svg id="priceSvg" viewBox="0 0 190 90" style="width:100%;display:block;"></svg>
+        </div>
+        <div class="phone" id="phoneSession">
+          <div class="ph-head">Tonight's schedule</div>
+          <div id="sessionBody" style="font-size:11.5px;"></div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;">
+        <div class="panel-card" id="leverCard">
+          <div class="pc-h"><span>TRUST LEVERS</span><span></span></div>
+          <div id="leverBody"></div>
+        </div>
+        <div class="kpi-strip" id="customerKpis"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="steps">
+  <section class="step" data-act="customer" data-role="tell-setup">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">LOOP 4</span> The social license</div>
+      <h2><span class="hlc">0.4% opt-out</span>: the trust that lets the program scale.</h2>
+      <p class="cue">So you can…</p>
+      <p>Every dispatch is a moment where a household either experiences value or feels coerced. I'll show
+        exactly what your customer sees and the guarantees that protect them — so you can judge whether
+        this earns the trust required to grow from 4,000 cars to 200,000.</p>
+    </div>
+  </section>
+
+  <section class="step show-step" data-act="customer" data-role="show">
+    <div class="card">
+      <div class="kicker role-show"><span class="line"></span><span class="num">SHOW</span> Optimized charging, hard personal limits</div>
+      <h2>Customers keep <span class="hl">control</span>. That's why they stay.</h2>
+      <ul class="beat-list" id="custBeats">
+        <li data-beat="0"><span class="bn">1</span><span>Tomorrow's price curve: the <b>€350/MWh</b> evening spike against roughly <b>€11</b> overnight — the customer never has to understand this chart.</span></li>
+        <li data-beat="1"><span class="bn">2</span><span>One night's optimized session: charging shifted overnight, <b>€2.12</b> saved, and the car guaranteed at departure charge by <b>07:30</b>.</span></li>
+        <li data-beat="2"><span class="bn">3</span><span>The trust levers: minimum-charge guarantee, blackout windows, a one-tap override — alongside the truth: 4,218 enrolled, <b>0.4%</b> opt-out, €312K returned to households.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="step" data-act="customer" data-role="tell-sowhat">
+    <div class="card">
+      <div class="kicker"><span class="line"></span><span class="num">SO WHAT</span></div>
+      <h2>The scarce asset in this market is <span class="hl">trust</span>, not technology.</h2>
+      <p>A 0.4% opt-out rate is proof the social license is holding. Whoever earns household trust first
+        gets the 200,000-customer flexibility base; whoever loses it reads about themselves in the press.</p>
+    </div>
+  </section>
+  </div>
+</div>
+
+<div class="pagenav" id="pagenav"></div>
+
+<script>window.V2PAGE = { act:"customer", beats:3, prev:"loop-3.html", next:"loop-5.html", num:"4", label:"Loop 4 · Customer", nextLabel:"Next loop \u203a" };</script>
+<script src="vpp-data.js"></script>
+<script src="v2-data.js"></script>
+<script src="v2-engine.js"></script>
+</body>
+</html>
